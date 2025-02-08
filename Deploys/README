@@ -1,0 +1,4 @@
+# How to run
+- Copy the Sparkle build folder with binary included (such as in DerivedData folder)
+- Run `bash deploy.sh ${path to the xcarchive}`
+- login gdrive if needed
