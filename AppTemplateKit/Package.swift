@@ -17,7 +17,7 @@ let debugOtherSwiftFlags = [
 ]
 
 let package = Package(
-    name: "AppNameKit",
+    name: "AppTemplateKit",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v13)
