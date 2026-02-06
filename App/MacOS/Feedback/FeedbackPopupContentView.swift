@@ -6,7 +6,7 @@
 //
 // Utilizing PopupViewContainer to display a feedback popup view.
 
-import AppTemplateKit
+import SmartSubscriptionKit
 import SwiftUI
 
 struct FeedbackPopupContentView: View {
@@ -23,7 +23,7 @@ struct FeedbackPopupContentView: View {
                 } label: {
                     Text("here")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.AppTemplateMainGradient)
+                        .foregroundStyle(Color.SmartSubscriptionMainGradient)
                 }
                 .buttonStyle(PlainButtonStyle())
             }

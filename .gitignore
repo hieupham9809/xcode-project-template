@@ -83,7 +83,7 @@ iOSInjectionProject/
 .idea/
 App/DevinClean.xcodeproj/*
 App/SwiftClean.xcodeproj/*
-App/AppTemplate.xcodeproj/*
+App/SmartSubscription.xcodeproj/*
 *.DS_Store
 
 # Deploys & Credentials

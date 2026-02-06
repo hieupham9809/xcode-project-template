@@ -1,6 +1,6 @@
 //
 //  FeedbackUseCase.swift
-//  AppTemplate
+//  SmartSubscription
 //
 //  Created by Thanh Phong on 22/12/24.
 //

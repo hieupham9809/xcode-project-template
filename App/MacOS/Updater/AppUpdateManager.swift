@@ -1,6 +1,6 @@
 //
 //  AppUpdateManager.swift
-//  AppTemplate
+//  SmartSubscription
 //
 //  Created by Harley Pham on 2/10/24.
 //

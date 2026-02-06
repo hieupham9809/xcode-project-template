@@ -1,5 +1,5 @@
 #!/bin/bash
-# USAGE: bash Deploys/deploy.sh /path/to/AppTemplate.app
+# USAGE: bash Deploys/deploy.sh /path/to/SmartSubscription.app
 # Function to extract the app and create a zip
 extract_and_zip() {
   local app_path="$1"
@@ -11,7 +11,7 @@ extract_and_zip() {
   # fi
 
   # Define the path to the .app bundle inside the .xcarchive
-  # local app_path="$archive_path/Products/Applications/AppTemplate.app"
+  # local app_path="$archive_path/Products/Applications/SmartSubscription.app"
 
   # Check if the .app bundle exists in the .xcarchive
   if [ ! -d "$app_path" ]; then
@@ -43,18 +43,18 @@ extract_and_zip() {
   mkdir -p "$BUILDS_DIR"
 
   # Create a new directory with the short version name inside the Builds directory
-  NEW_DIR="$BUILDS_DIR/AppTemplate_$SHORT_VERSION"
+  NEW_DIR="$BUILDS_DIR/SmartSubscription_$SHORT_VERSION"
   mkdir -p "$NEW_DIR"
 
   # Copy the .app bundle to the new directory
   cp -R "$app_path" "$NEW_DIR"
 
   # Define the zip file name
-  ZIP_FILE="AppTemplate_$SHORT_VERSION.zip"
+  ZIP_FILE="SmartSubscription_$SHORT_VERSION.zip"
   ZIP_FILE_FULL_PATH="$NEW_DIR/$ZIP_FILE"
 
   # Compress the .app bundle into a zip file without parent directories
-  (cd "$NEW_DIR" && ditto -c -k --keepParent "AppTemplate.app" "$ZIP_FILE")
+  (cd "$NEW_DIR" && ditto -c -k --keepParent "SmartSubscription.app" "$ZIP_FILE")
 
   echo "The app has been compressed into $ZIP_FILE"
 }
@@ -148,7 +148,7 @@ generate_appcast() {
 <?xml version="1.0" standalone="yes"?>
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
-        <title>AppTemplate</title>
+        <title>SmartSubscription</title>
         <item>
             <title>$ITEM_TITLE</title>
             <pubDate>$PUB_DATE</pubDate>
@@ -171,7 +171,7 @@ EOL
 
 # Main script execution
 if [ -z "$1" ]; then
-  echo "Usage: $0 /path/to/AppTemplate.xcarchive"
+  echo "Usage: $0 /path/to/SmartSubscription.xcarchive"
   exit 1
 fi
 

@@ -1,0 +1,8 @@
+{
+  "total": {
+    "amount": 15.99,
+    "currencyCode": "USD"
+  },
+  "invoiceDate": "2023-12-01T00:00:00Z",
+  "ocrText": "Netflix Inc.\nMonthly Subscription\n$15.99\nDate: 12/01/2023"
+}

@@ -1,6 +1,6 @@
 //
 //  HighlightButtonStyle.swift
-//  AppTemplate
+//  SmartSubscription
 //
 //  Created by Harley Pham on 1/12/24.
 //

@@ -1,13 +1,13 @@
 //
 //  AppDelegate.swift
-//  AppTemplate
+//  SmartSubscription
 //
 //  Created by Harley Pham on 25/8/24.
 //
 
 import AppKit
 import Combine
-import AppTemplateKit
+import SmartSubscriptionKit
 import Firebase
 import Foundation
 import SwiftUI
@@ -22,14 +22,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         FirebaseApp.configure()
         Analytics.logEvent(AnalyticsEventAppOpen, parameters: nil)
         AppEventLogger.logger = FirebaseEventLogger.shared
-        AppTemplateIAPManager.shared.startObserving()
+        SmartSubscriptionIAPManager.shared.startObserving()
 #if !APP_SANDBOX
         _ = AppUpdateManager.shared
 #endif
     }
     
     func applicationWillTerminate(_ notification: Notification) {
-        AppTemplateIAPManager.shared.stopObserving()
+        SmartSubscriptionIAPManager.shared.stopObserving()
     }
     
     @objc func toggleWindow() {

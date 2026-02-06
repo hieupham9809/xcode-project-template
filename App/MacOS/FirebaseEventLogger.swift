@@ -1,11 +1,11 @@
 //
 //  FirebaseEventLogger.swift
-//  AppTemplate
+//  SmartSubscription
 //
 //  Created by Phong Tran 2 on 12/9/24.
 //
 
-import AppTemplateKit
+import SmartSubscriptionKit
 import FirebaseCore
 import FirebaseFirestore
 import os

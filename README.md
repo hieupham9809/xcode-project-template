@@ -15,7 +15,7 @@ Begin by updating the project name in the Makefile.
 -PROJECT_NAME := SampleApp
 +PROJECT_NAME := YOUR_PROJECT_NAME
 ```
-- Replace `AppTemplate` name with the desired name of your app target.
+- Replace `SmartSubscription` name with the desired name of your app target.
 
 
 ### (Optional) Update project git directory path

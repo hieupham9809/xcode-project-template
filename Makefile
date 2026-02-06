@@ -1,4 +1,4 @@
-PROJECT_NAME := AppTemplate
+PROJECT_NAME := SmartSubscription
 PROJECT_GIT_DIR := .
 
 .PHONY: bootstrap
@@ -8,7 +8,7 @@ bootstrap:
 
 .PHONY: gen-project
 gen-project:
-	find . -name "project.yml" -or -name "Package.swift" | xargs sed -i "" "s/SampleApp/$(PROJECT_NAME)/g"
+	find . -name "project.yml" -or -name "Package.swift" | xargs sed -i "" "s/SmartSubscription/$(PROJECT_NAME)/g"
 	mint run xcodegen xcodegen generate --project ./App
 
 .PHONY: open-project

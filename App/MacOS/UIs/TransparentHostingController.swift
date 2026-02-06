@@ -1,6 +1,6 @@
 //
 //  TransparentHostingController.swift
-//  AppTemplate
+//  SmartSubscription
 //
 //  Created by Harley Pham on 8/12/24.
 //

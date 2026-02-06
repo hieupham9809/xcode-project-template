@@ -1,8 +1,8 @@
-name: AppTemplate
+name: SmartSubscription
 options:
   xcodeVersion: "15.0"
   deploymentTarget:
-    macOS: "13.0"
+    macOS: "14.0"
   developmentLanguage: en
 
 settings:
@@ -10,10 +10,8 @@ settings:
     SWIFT_VERSION: 5.0
 
 packages:
-  AppTemplateKit:
-    path: ./AppTemplateKit
-  AppTemplate:
-    path: .
+  SmartSubscriptionKit:
+    path: ./SmartSubscriptionKit
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk
     from: 11.0.0
@@ -22,7 +20,7 @@ packages:
     from: 2.6.4
 
 targets:
-  AppTemplate:
+  SmartSubscription:
     type: application
     platform: macOS
     settings:
@@ -32,22 +30,22 @@ targets:
         GENERATE_INFOPLIST_FILE: false
         ENABLE_USER_SCRIPT_SANDBOXING: false
         APP_SANDBOX: YES
-        INFOPLIST_FILE: Info.plist
+        INFOPLIST_FILE: App/Info.plist
       configs:
         Debug:
           ENABLE_HARDENED_RUNTIME: YES
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
-          CODE_SIGN_ENTITLEMENTS: App_non_sandbox.entitlements
+          CODE_SIGN_ENTITLEMENTS: App/App_non_sandbox.entitlements
         release:
           ENABLE_HARDENED_RUNTIME: YES
-          CODE_SIGN_ENTITLEMENTS: App_non_sandbox.entitlements
+          CODE_SIGN_ENTITLEMENTS: App/App_non_sandbox.entitlements
     sources:
       - path: ./App/MacOS
     dependencies:
       - sdk: StoreKit.framework
-      - package: AppTemplateKit
+      - package: SmartSubscriptionKit
         products:
-          - AppTemplateKit
+          - SmartSubscriptionKit
       - package: Firebase
         products:
           - FirebaseAnalytics
@@ -61,47 +59,45 @@ targets:
       - name: Run SwiftLint
         path: /bin/sh
         script: |-
-          cd $SRCROOT/..
-
           make lint
-      - name: Run Firebase
-        path: /bin/sh
-        script: |-
-          "${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
-        inputFiles:
-          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}
-          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}
-          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist
-          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist
-          - $(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)
+#      - name: Run Firebase
+#        path: /bin/sh
+#        script: |-
+#          "${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
+#        inputFiles:
+#          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}
+#          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}
+#          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist
+#          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist
+#          - $(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)
 
-  AppTemplate_sandbox:
+  SmartSubscription_sandbox:
     type: application
     platform: macOS
     settings:
       base:
-        PRODUCT_NAME: AppTemplate
+        PRODUCT_NAME: SmartSubscription
         ENABLE_PREVIEWS: true
         GENERATE_INFOPLIST_FILE: false
         ENABLE_USER_SCRIPT_SANDBOXING: false
         APP_SANDBOX: YES
-        INFOPLIST_FILE: Info.plist
+        INFOPLIST_FILE: App/Info.plist
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG APP_SANDBOX
-          CODE_SIGN_ENTITLEMENTS: App.entitlements
+          CODE_SIGN_ENTITLEMENTS: App/App.entitlements
           INFOPLIST_KEY_SUEnableInstallerLauncherService: true
         Release:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: APP_SANDBOX
-          CODE_SIGN_ENTITLEMENTS: App.entitlements
+          CODE_SIGN_ENTITLEMENTS: App/App.entitlements
           INFOPLIST_KEY_SUEnableInstallerLauncherService: true
     sources:
       - path: ./App/MacOS
     dependencies:
       - sdk: StoreKit.framework
-      - package: AppTemplateKit
+      - package: SmartSubscriptionKit
         products:
-          - AppTemplateKit
+          - SmartSubscriptionKit
       - package: Firebase
         products:
           - FirebaseAnalytics
@@ -115,22 +111,99 @@ targets:
           cd $SRCROOT/..
 
           make lint
-      - name: Run Firebase
-        path: /bin/sh
-        script: |-
-          "${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
-        inputFiles:
-          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}
-          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}
-          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist
-          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist
-          - $(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)
+#      - name: Run Firebase
+#        path: /bin/sh
+#        script: |-
+#          "${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
+#        inputFiles:
+#          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}
+#          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}
+#          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist
+#          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist
+#          - $(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)
+
+  SmartSubscriptionIOS:
+    type: application
+    platform: iOS
+    deploymentTarget:
+      iOS: "16.0"
+    settings:
+      base:
+        PRODUCT_NAME: SmartSubscription
+        GENERATE_INFOPLIST_FILE: false
+        INFOPLIST_FILE: iOS/Info.plist
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.devindi.SmartSubscription.ios
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0.0
+        DEVELOPMENT_TEAM: VWB936L9T6
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_ENTITLEMENTS: iOS.entitlements
+    sources:
+      - path: ./App/iOS
+        excludes:
+          - Info.plist
+      - path: ./App/MacOS/ViewModels
+      - path: ./App/MacOS/UseCases
+      - path: ./App/MacOS/Utilities
+      - path: ./App/MacOS/FirebaseEventLogger.swift
+      - path: ./App/MacOS/SmartSubscriptionAppModel.swift
+      - path: ./App/MacOS/Navigation/AddSubscriptionCoordinator.swift
+      - path: ./App/MacOS/UIs
+        excludes:
+          - HomeDashboardView.swift
+          - TransparentHostingController.swift
+          - ImageViewer.swift
+          - AddSubscriptionView.swift
+    dependencies:
+      - sdk: StoreKit.framework
+      - package: SmartSubscriptionKit
+        products:
+          - SmartSubscriptionKit
+      - package: Firebase
+        products:
+          - FirebaseAnalytics
+          - FirebaseCrashlytics
+          - FirebaseFirestore
+
+  SmartSubscriptionTests:
+    type: bundle.unit-test
+    platform: macOS
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+    sources:
+      - path: ./App/Tests
+      - path: ./App/MacOS/ViewModels/HomeDashboardViewModel.swift
+      - path: ./App/MacOS/ViewModels/ReviewEditViewModel.swift
+      - path: ./App/MacOS/UseCases/SubscriptionUseCase.swift
+    dependencies:
+      - package: SmartSubscriptionKit
+        products:
+          - SmartSubscriptionKit
 
 schemes:
-  AppTemplate:
+  SmartSubscription:
     build:
       targets:
-        AppTemplate: all
+        SmartSubscription: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - name: SmartSubscriptionTests
+    profile:
+      config: Debug
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+  SmartSubscription_sandbox:
+    build:
+      targets:
+        SmartSubscription_sandbox: all
     run:
       config: Debug
     test:
@@ -141,10 +214,11 @@ schemes:
       config: Debug
     archive:
       config: Release
-  AppTemplate_sandbox:
+
+  SmartSubscriptionIOS:
     build:
       targets:
-        AppTemplate_sandbox: all
+        SmartSubscriptionIOS: all
     run:
       config: Debug
     test:
