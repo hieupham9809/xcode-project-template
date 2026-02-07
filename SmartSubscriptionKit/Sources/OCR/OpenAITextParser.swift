@@ -1,12 +1,8 @@
 import Foundation
-#if canImport(UIKit)
-    import UIKit
-#endif
-#if canImport(AppKit)
-    import AppKit
-#endif
 
-public actor OpenAIVisionParser: InvoiceParser {
+/// Parser that extracts structured invoice data from OCR-extracted text using OpenAI API
+/// This parser is optimized for token efficiency by working with text instead of images
+public actor OpenAITextParser: Sendable {
     private let session: URLSession
     private let settingsStore: SettingsStore
     private let logger = Log.initialize(category: .main)
@@ -16,29 +12,23 @@ public actor OpenAIVisionParser: InvoiceParser {
         self.settingsStore = settingsStore
     }
 
-    public func parse(imageURL: URL) async throws -> Invoice {
-        guard let data = try? Data(contentsOf: imageURL) else {
-            throw InvoiceParserError.invalidImage
-        }
-        return try await parse(imageData: data)
-    }
-
-    public func parse(imageData: Data) async throws -> Invoice {
+    /// Parse invoice data from OCR-extracted text
+    /// - Parameter text: The text extracted from an invoice image via OCR
+    /// - Returns: Parsed Invoice object
+    /// - Throws: InvoiceParserError if parsing fails
+    public func parseInvoiceFromText(_ text: String) async throws -> Invoice {
         guard let apiKey = try settingsStore.getOpenAIAPIKey() else {
             throw InvoiceParserError.noAPIKey
         }
 
-        // Resize image to reduce tokens (max 1024px on longest side)
-        let resizedData = resizeImageIfNeeded(imageData, maxDimension: 1024)
-        logger.debug("[InvoiceParser] Original size: \(imageData.count) bytes, Resized: \(resizedData.count) bytes")
-
-        let base64Image = resizedData.base64EncodedString()
+        logger.debug("[OpenAITextParser] Parsing invoice from \(text.count) characters of text")
 
         let systemPrompt = """
-        You are an expert OCR and invoice parsing assistant.
-        Extract the following fields from the invoice image:
+        You are an expert invoice parsing assistant.
+        You will receive text that was extracted from an invoice image via OCR.
+        Extract the following fields from the invoice text:
         - Invoice Date (ISO 8601 format YYYY-MM-DD)
-        - Next Billing/Renewal Date (ISO 8601 format YYYY-MM-DD), if available.
+        - Next Billing/Renewal Date (ISO 8601 format YYYY-MM-DD), if available. It can be calculated from the invoice date and billing cycle.
         - Total Amount (numeric, see NUMBER FORMAT RULES below)
         - Currency Code (3-letter ISO code, e.g. USD, EUR, VND, JPY)
         - Subscription Name (descriptive name including plan/tier, e.g., "Netflix Premium", "Spotify Family")
@@ -87,18 +77,7 @@ public actor OpenAIVisionParser: InvoiceParser {
                 ],
                 [
                     "role": "user",
-                    "content": [
-                        [
-                            "type": "text",
-                            "text": "Parse this invoice.",
-                        ],
-                        [
-                            "type": "image_url",
-                            "image_url": [
-                                "url": "data:image/jpeg;base64,\(base64Image)",
-                            ],
-                        ],
-                    ],
+                    "content": "Parse this invoice:\n\n\(text)",
                 ],
             ],
             "max_tokens": 1000,
@@ -125,8 +104,10 @@ public actor OpenAIVisionParser: InvoiceParser {
             throw InvoiceParserError.networkError("Status code: \(httpResponse.statusCode)")
         }
 
-        return try parseOpenAIResponse(data)
+        return try parseOpenAIResponse(data, originalText: text)
     }
+
+    // MARK: - Private Helpers
 
     private func performRequestWithRetry(_ request: URLRequest, attempt: Int = 1) async throws -> (Data, URLResponse) {
         do {
@@ -134,6 +115,7 @@ public actor OpenAIVisionParser: InvoiceParser {
         } catch {
             if attempt < 3 {
                 let delay = UInt64(pow(2.0, Double(attempt))) * 1_000_000_000
+                logger.debug("[OpenAITextParser] Retry attempt \(attempt) after \(delay / 1_000_000_000)s")
                 try await Task.sleep(nanoseconds: delay)
                 return try await performRequestWithRetry(request, attempt: attempt + 1)
             }
@@ -141,7 +123,7 @@ public actor OpenAIVisionParser: InvoiceParser {
         }
     }
 
-    private func parseOpenAIResponse(_ data: Data) throws -> Invoice {
+    private func parseOpenAIResponse(_ data: Data, originalText: String) throws -> Invoice {
         struct OpenAIResponse: Decodable {
             struct Choice: Decodable {
                 struct Message: Decodable {
@@ -159,7 +141,7 @@ public actor OpenAIVisionParser: InvoiceParser {
             throw InvoiceParserError.parsingFailed("No content in response")
         }
 
-        logger.debug("[InvoiceParser] Raw API response content: \(content)")
+        logger.debug("[OpenAITextParser] Raw API response content: \(content)")
 
         // Clean up markdown code blocks if present
         let cleanContent = content
@@ -167,7 +149,7 @@ public actor OpenAIVisionParser: InvoiceParser {
             .replacingOccurrences(of: "```", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        logger.debug("[InvoiceParser] Cleaned content: \(cleanContent)")
+        logger.debug("[OpenAITextParser] Cleaned content: \(cleanContent)")
 
         guard let jsonData = cleanContent.data(using: .utf8) else {
             throw InvoiceParserError.parsingFailed("Invalid string data")
@@ -189,10 +171,10 @@ public actor OpenAIVisionParser: InvoiceParser {
         }
 
         let parsed = try JSONDecoder().decode(ParsedInvoice.self, from: jsonData)
-
-        logger.debug("[InvoiceParser] Parsed providerName: \(parsed.providerName)")
-        logger.debug("[InvoiceParser] Parsed totalAmount: \(parsed.totalAmount) \(parsed.currencyCode)")
-        logger.debug("[InvoiceParser] Parsed invoiceDate: \(parsed.invoiceDate)")
+        logger.debug("[OpenAITextParser] original text: \(originalText)")
+        logger.debug("[OpenAITextParser] Parsed providerName: \(parsed.providerName)")
+        logger.debug("[OpenAITextParser] Parsed totalAmount: \(parsed.totalAmount) \(parsed.currencyCode)")
+        logger.debug("[OpenAITextParser] Parsed invoiceDate: \(parsed.invoiceDate)")
 
         // Date parsing
         let formatter = DateFormatter()
@@ -204,70 +186,14 @@ public actor OpenAIVisionParser: InvoiceParser {
             Invoice.LineItem(title: $0.title, amount: Money(amount: $0.amount, currencyCode: parsed.currencyCode))
         }
 
-        // Note: We return an Invoice, but we need to associate it with a Subscription.
-        // Since the parser doesn't know about existing subscriptions or which one this belongs to,
-        // we'll return a temporary Invoice with a dummy subscription ID.
-        // The calling UseCase/ViewModel should handle linking or creating a new Subscription.
-
-        // However, we also need to return the providerName to help with subscription matching.
-        // We might need to extend Invoice or return a Tuple/Wrapper.
-        // For now, let's assume we create a new Subscription for it or match it later.
-        // We will store the providerName in the Invoice's ocrText for now as a JSON string or just return the Invoice
-        // and let the caller handle the rest.
-        // Wait, Invoice doesn't have providerName. Subscription does.
-        // Let's assume we return an Invoice that has the parsed data.
-
-        // Actually, for "Add Subscription" flow, we parse an image and want to populate the "Add Subscription" form.
-        // That form needs: Name (Provider), Amount, Date, etc.
-        // The Invoice model has: invoiceDate, total, lineItems.
-        // It seems we might want a specific `ParsedInvoiceResult` struct that includes provider name.
-
-        // Let's modify the return type? No, the protocol says `Invoice`.
-        // But `Invoice` is strictly linked to a `Subscription`.
-        // Maybe we should update `Invoice` to include `providerName` optionally? Or use a separate DTO?
-        // Given the protocol `func parse(...) -> Invoice`, we are constrained.
-        // Let's stick to returning an Invoice, and maybe embed the provider name in `ocrText` temporarily?
-        // Or better: The caller probably wants a `Subscription` AND an `Invoice`.
-
-        // Let's look at `Invoice` struct again.
-        // It has `ocrText`. We can put the full raw JSON in `ocrText`.
+        // Store the original OCR text and parsed JSON for debugging/reference
 
         return Invoice(
             subscriptionID: Subscription.ID(), // Temporary
             invoiceDate: date,
             total: totalMoney,
             lineItems: domainLineItems,
-            ocrText: cleanContent // Store raw JSON for caller to extract providerName
+            ocrText: cleanContent
         )
-    }
-
-    private func resizeImageIfNeeded(_ data: Data, maxDimension: CGFloat) -> Data {
-        #if canImport(UIKit)
-            guard let image = UIImage(data: data) else { return data }
-
-            // Calculate new size
-            let size = image.size
-            let aspectRatio = size.width / size.height
-            var newSize = size
-
-            if size.width > maxDimension || size.height > maxDimension {
-                if size.width > size.height {
-                    newSize = CGSize(width: maxDimension, height: maxDimension / aspectRatio)
-                } else {
-                    newSize = CGSize(width: maxDimension * aspectRatio, height: maxDimension)
-                }
-
-                let renderer = UIGraphicsImageRenderer(size: newSize)
-                let resizedImage = renderer.image { _ in
-                    image.draw(in: CGRect(origin: .zero, size: newSize))
-                }
-
-                return resizedImage.jpegData(compressionQuality: 0.8) ?? data
-            }
-            return data
-        #else
-            // For macOS (if needed later), or just return original data
-            return data
-        #endif
     }
 }

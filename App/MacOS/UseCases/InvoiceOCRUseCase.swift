@@ -7,17 +7,27 @@ public protocol InvoiceOCRUseCase: Sendable {
 }
 
 public actor AppInvoiceOCRUseCase: InvoiceOCRUseCase {
-    private let parser: InvoiceParser
+    private let factory: ParserFactory
+    private let settingsStore: SettingsStore
+    private let session: URLSession
 
-    public init(parser: InvoiceParser) {
-        self.parser = parser
+    public init(
+        factory: ParserFactory = ParserFactory(),
+        settingsStore: SettingsStore = .shared,
+        session: URLSession = .shared
+    ) {
+        self.factory = factory
+        self.settingsStore = settingsStore
+        self.session = session
     }
 
     public func parseInvoice(from imageURL: URL) async throws -> Invoice {
-        try await parser.parse(imageURL: imageURL)
+        let parser = factory.createParser(from: settingsStore, session: session)
+        return try await parser.parse(imageURL: imageURL)
     }
 
     public func parseInvoice(from imageData: Data) async throws -> Invoice {
-        try await parser.parse(imageData: imageData)
+        let parser = factory.createParser(from: settingsStore, session: session)
+        return try await parser.parse(imageData: imageData)
     }
 }

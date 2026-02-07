@@ -1,19 +1,19 @@
-import SwiftUI
 import SmartSubscriptionKit
+import SwiftUI
 
 struct ReviewEditSubscriptionView: View {
     @StateObject var viewModel: ReviewEditViewModel
     @Environment(\.dismiss) private var dismiss
-    
+
     /// Optional binding to navigation path for pop-to-root after save
     var path: Binding<NavigationPath>?
 
     #if os(iOS)
-    @FocusState private var focusedField: Field?
+        @FocusState private var focusedField: Field?
 
-    enum Field: Hashable {
-        case name, provider, amount, currency, notes
-    }
+        enum Field: Hashable {
+            case name, provider, amount, currency, notes
+        }
     #endif
 
     var body: some View {
@@ -21,18 +21,18 @@ struct ReviewEditSubscriptionView: View {
             Section(header: Text("Subscription Details")) {
                 TextField("Name (e.g. Netflix)", text: $viewModel.name)
                     .onChange(of: viewModel.name) { _ in viewModel.validate() }
-                    #if os(iOS)
+                #if os(iOS)
                     .focused($focusedField, equals: .name)
                     .textContentType(.organizationName)
                     .autocorrectionDisabled()
-                    #endif
+                #endif
 
                 TextField("Provider", text: $viewModel.providerName)
-                    #if os(iOS)
+                #if os(iOS)
                     .focused($focusedField, equals: .provider)
                     .textContentType(.organizationName)
                     .autocorrectionDisabled()
-                    #endif
+                #endif
             }
 
             if !viewModel.lineItems.isEmpty {
@@ -50,23 +50,23 @@ struct ReviewEditSubscriptionView: View {
                     }
                 }
             }
-            
-            Section(header: Text("Payment")) {
+
+            Section {
                 HStack {
                     TextField("Amount", value: $viewModel.amount, format: .number)
                         .onChange(of: viewModel.amount) { _ in viewModel.validate() }
-                        #if os(iOS)
+                    #if os(iOS)
                         .focused($focusedField, equals: .amount)
                         .keyboardType(.decimalPad)
-                        #endif
+                    #endif
 
                     TextField("Currency", text: $viewModel.currencyCode)
                         .frame(width: 60)
-                        #if os(iOS)
+                    #if os(iOS)
                         .focused($focusedField, equals: .currency)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
-                        #endif
+                    #endif
                 }
 
                 Picker("Billing Cycle", selection: $viewModel.selectedCadence) {
@@ -76,65 +76,72 @@ struct ReviewEditSubscriptionView: View {
                 }
 
                 DatePicker("Next Billing", selection: $viewModel.nextBillingDate, displayedComponents: .date)
+            } header: {
+                Text("Payment")
+            } footer: {
+                Text(
+                    "Format: Period (.) is decimal separator, comma (,) is thousands separator. Example: 1,234.56 = one thousand two hundred thirty-four and 56 cents. Zero-decimal currencies (VND, JPY, KRW) use whole numbers only."
+                )
+                .font(.caption)
             }
 
             Section(header: Text("Notes")) {
                 TextEditor(text: $viewModel.notes)
                     .frame(minHeight: 80)
-                    #if os(iOS)
+                #if os(iOS)
                     .focused($focusedField, equals: .notes)
-                    #endif
+                #endif
             }
         }
         .formStyle(.grouped)
         .navigationTitle("Review Subscription")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
         #endif
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    Task {
-                        await viewModel.save()
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        Task {
+                            await viewModel.save()
+                        }
+                    }
+                    .disabled(!viewModel.isValid || viewModel.isSaving)
+                    #if os(iOS)
+                        .fontWeight(.semibold)
+                    #endif
+                }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
                     }
                 }
-                .disabled(!viewModel.isValid || viewModel.isSaving)
                 #if os(iOS)
-                .fontWeight(.semibold)
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            focusedField = nil
+                        }
+                    }
                 #endif
             }
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    dismiss()
+            .onChange(of: viewModel.shouldDismiss) { shouldDismiss in
+                if shouldDismiss {
+                    // If path is provided (OCR flow), pop to root
+                    // Otherwise just dismiss (edit flow)
+                    if let path {
+                        path.wrappedValue = NavigationPath()
+                    } else {
+                        dismiss()
+                    }
                 }
             }
-            #if os(iOS)
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    focusedField = nil
-                }
+            .alert("Error Saving", isPresented: Binding(
+                get: { viewModel.saveError != nil },
+                set: { if !$0 { viewModel.saveError = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.saveError ?? "Unknown error")
             }
-            #endif
-        }
-        .onChange(of: viewModel.shouldDismiss) { shouldDismiss in
-            if shouldDismiss {
-                // If path is provided (OCR flow), pop to root
-                // Otherwise just dismiss (edit flow)
-                if let path = path {
-                    path.wrappedValue = NavigationPath()
-                } else {
-                    dismiss()
-                }
-            }
-        }
-        .alert("Error Saving", isPresented: Binding(
-            get: { viewModel.saveError != nil },
-            set: { if !$0 { viewModel.saveError = nil } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.saveError ?? "Unknown error")
-        }
     }
 }

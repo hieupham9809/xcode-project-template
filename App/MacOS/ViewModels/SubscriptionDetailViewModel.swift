@@ -1,6 +1,6 @@
+import Combine
 import Foundation
 import SmartSubscriptionKit
-import Combine
 
 @MainActor
 final class SubscriptionDetailViewModel: ObservableObject {
@@ -8,13 +8,18 @@ final class SubscriptionDetailViewModel: ObservableObject {
     @Published var invoices: [Invoice] = []
     @Published var isLoadingInvoices = false
     @Published var errorMessage: String?
-    
+
     // For editing/deleting
     @Published var isDeleting = false
     @Published var shouldDismiss = false
 
     private let subscriptionUseCase: SubscriptionUseCase
     private let invoiceRepository: InvoiceRepository // Direct repo access or via UseCase if exists
+
+    var subscriptionAmountFormatted: String {
+        let formatter = Formatters.currencyFormatter(for: subscription.amount.currencyCode)
+        return formatter.string(from: subscription.amount.amount as NSDecimalNumber) ?? "\(subscription.amount) \(subscription.amount.currencyCode)"
+    }
 
     init(
         subscription: SmartSubscriptionKit.Subscription,
@@ -29,7 +34,7 @@ final class SubscriptionDetailViewModel: ObservableObject {
     func loadInvoices() async {
         isLoadingInvoices = true
         do {
-            self.invoices = try await invoiceRepository.fetchAll(for: subscription.id)
+            invoices = try await invoiceRepository.fetchAll(for: subscription.id)
         } catch {
             print("[SubscriptionDetailVM] Failed to load invoices: \(error)")
         }

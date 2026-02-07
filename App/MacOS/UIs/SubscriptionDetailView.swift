@@ -1,9 +1,9 @@
-import SwiftUI
 import SmartSubscriptionKit
+import SwiftUI
 #if os(macOS)
-import AppKit
+    import AppKit
 #elseif os(iOS)
-import UIKit
+    import UIKit
 #endif
 
 struct SubscriptionDetailView: View {
@@ -12,8 +12,8 @@ struct SubscriptionDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     #if os(iOS)
-    @State private var showingImageViewer = false
-    @State private var selectedInvoiceURL: URL?
+        @State private var showingImageViewer = false
+        @State private var selectedInvoiceURL: URL?
     #endif
 
     var body: some View {
@@ -29,16 +29,16 @@ struct SubscriptionDetailView: View {
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundStyle(.white)
                         )
-                    
+
                     VStack(spacing: 8) {
                         Text(viewModel.subscription.name)
                             .font(.title)
                             .bold()
-                        
-                        Text(viewModel.subscription.amount.formatted)
+
+                        Text(viewModel.subscriptionAmountFormatted)
                             .font(.system(size: 36, weight: .heavy, design: .rounded))
                             .foregroundStyle(Color.primaryText)
-                        
+
                         Text("/ \(viewModel.subscription.cadence.description.lowercased())")
                             .foregroundStyle(Color.secondaryText)
                     }
@@ -54,15 +54,13 @@ struct SubscriptionDetailView: View {
                 }
                 .padding(.horizontal)
 
-
-
                 // Line Items (from latest invoice)
                 if let latestInvoice = viewModel.invoices.first, !latestInvoice.lineItems.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Items")
                             .font(.headline)
                             .padding(.horizontal)
-                        
+
                         VStack(spacing: 0) {
                             ForEach(latestInvoice.lineItems, id: \.self) { item in
                                 HStack {
@@ -72,12 +70,12 @@ struct SubscriptionDetailView: View {
                                         .lineLimit(2)
                                         .multilineTextAlignment(.leading)
                                     Spacer()
-                                    Text(item.amount.formatted)
+                                    Text(item.amount.amount.formattedAsCurrency(code: viewModel.subscription.amount.currencyCode))
                                         .font(.subheadline)
                                         .foregroundStyle(Color.secondaryText)
                                 }
                                 .padding()
-                                
+
                                 if item != latestInvoice.lineItems.last {
                                     Divider().padding(.leading)
                                 }
@@ -92,7 +90,7 @@ struct SubscriptionDetailView: View {
 
                 // Invoice History (iOS)
                 #if os(iOS)
-                invoiceHistorySection
+                    invoiceHistorySection
                 #endif
 
                 // Notes
@@ -104,18 +102,18 @@ struct SubscriptionDetailView: View {
                             .foregroundStyle(Color.secondaryText)
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            #if os(macOS)
+                        #if os(macOS)
                             .background(Color(NSColor.controlBackgroundColor))
-                            #else
+                        #else
                             .background(Color(uiColor: .secondarySystemBackground))
-                            #endif
+                        #endif
                             .cornerRadius(8)
                     }
                     .padding(.horizontal)
                 }
 
                 Spacer()
-                
+
                 // Actions
                 Button(role: .destructive) {
                     Task {
@@ -138,75 +136,76 @@ struct SubscriptionDetailView: View {
         #endif
         .navigationTitle(viewModel.subscription.name)
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
         #endif
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Edit") {
-                    path.append(NavigationRoute.editSubscription(viewModel.subscription.id))
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Edit") {
+                        path.append(NavigationRoute.editSubscription(viewModel.subscription.id))
+                    }
                 }
             }
-        }
-        .onChange(of: viewModel.shouldDismiss) { shouldDismiss in
-            if shouldDismiss {
-                if path.count > 0 {
-                    path.removeLast()
+            .onChange(of: viewModel.shouldDismiss) { shouldDismiss in
+                if shouldDismiss {
+                    if !path.isEmpty {
+                        path.removeLast()
+                    }
                 }
             }
-        }
         #if os(iOS)
-        .sheet(isPresented: $showingImageViewer) {
-            if let url = selectedInvoiceURL {
-                ImageViewer(imageURL: url)
+            .sheet(isPresented: $showingImageViewer) {
+                if let url = selectedInvoiceURL {
+                    ImageViewer(imageURL: url)
+                }
             }
-        }
         #endif
-        .task {
-            await viewModel.loadInvoices()
-        }
+            .task {
+                await viewModel.loadInvoices()
+            }
     }
 
     #if os(iOS)
-    @ViewBuilder
-    private var invoiceHistorySection: some View {
-        let invoicesWithImages = viewModel.invoices.filter { $0.sourceImageURL != nil }
-        if !invoicesWithImages.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Invoice History")
-                    .font(.headline)
-                    .padding(.horizontal)
+        @ViewBuilder
+        private var invoiceHistorySection: some View {
+            let invoicesWithImages = viewModel.invoices.filter { $0.sourceImageURL != nil }
+            if !invoicesWithImages.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Invoice History")
+                        .font(.headline)
+                        .padding(.horizontal)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(invoicesWithImages, id: \.id) { invoice in
-                            if let url = invoice.sourceImageURL,
-                               let data = try? Data(contentsOf: url),
-                               let uiImage = UIImage(data: data) {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 80, height: 100)
-                                    .cornerRadius(8)
-                                    .clipped()
-                                    .onTapGesture {
-                                        selectedInvoiceURL = url
-                                        showingImageViewer = true
-                                    }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(invoicesWithImages, id: \.id) { invoice in
+                                if let url = invoice.sourceImageURL,
+                                   let data = try? Data(contentsOf: url),
+                                   let uiImage = UIImage(data: data)
+                                {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 80, height: 100)
+                                        .cornerRadius(8)
+                                        .clipped()
+                                        .onTapGesture {
+                                            selectedInvoiceURL = url
+                                            showingImageViewer = true
+                                        }
+                                }
                             }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
                 }
             }
         }
-    }
     #endif
 }
 
 struct InfoTile: View {
     let title: String
     let value: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)

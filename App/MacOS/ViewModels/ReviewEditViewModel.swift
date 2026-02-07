@@ -1,18 +1,18 @@
+import Combine
 import Foundation
 import SmartSubscriptionKit
-import Combine
 
 @MainActor
 final class ReviewEditViewModel: ObservableObject {
     @Published var name: String = ""
     @Published var amount: Decimal = 0.0
-    @Published var currencyCode: String = "USD"
+    @Published var currencyCode: String = SettingsStore.shared.defaultCurrency
     @Published var selectedCadence: SmartSubscriptionKit.Subscription.BillingCadence = .monthly
-    @Published var nextBillingDate: Date = Date()
+    @Published var nextBillingDate: Date = .init()
     @Published var providerName: String = ""
     @Published var notes: String = ""
     @Published var lineItems: [SmartSubscriptionKit.Invoice.LineItem] = []
-    
+
     @Published var isValid: Bool = false
     @Published var isSaving: Bool = false
     @Published var saveError: String?
@@ -24,7 +24,7 @@ final class ReviewEditViewModel: ObservableObject {
     private var existingSubscription: SmartSubscriptionKit.Subscription?
     private let logger = Log.initialize(category: .main)
     private var cancellables = Set<AnyCancellable>()
-    private var referenceStartDate: Date = Date()
+    private var referenceStartDate: Date = .init()
 
     init(
         subscriptionUseCase: SubscriptionUseCase,
@@ -34,79 +34,91 @@ final class ReviewEditViewModel: ObservableObject {
     ) {
         self.subscriptionUseCase = subscriptionUseCase
         self.invoiceRepository = invoiceRepository
-        self.originalInvoice = invoice
-        self.existingSubscription = subscription
-        
-        if let subscription = subscription {
-            self.referenceStartDate = subscription.startDate
-        } else if let invoice = invoice {
-            self.referenceStartDate = invoice.invoiceDate
+        originalInvoice = invoice
+        existingSubscription = subscription
+
+        if let subscription {
+            referenceStartDate = subscription.startDate
+        } else if let invoice {
+            referenceStartDate = invoice.invoiceDate
         } else {
-            self.referenceStartDate = Date()
+            referenceStartDate = Date()
         }
-        
-        if let invoice = invoice {
+
+        if let invoice {
             // Pre-fill from invoice
-            self.amount = invoice.total.amount
-            self.currencyCode = invoice.total.currencyCode
-            self.nextBillingDate = invoice.invoiceDate // Default to invoice date, user adjusts
-            self.lineItems = invoice.lineItems
-            
+            amount = invoice.total.amount
+            currencyCode = invoice.total.currencyCode
+            nextBillingDate = invoice.invoiceDate // Default to invoice date, user adjusts
+            lineItems = invoice.lineItems
+
             // Try to extract provider name from OCR text (stored as JSON)
             if let rawText = invoice.ocrText {
                 logger.debug("[ReviewEditVM] ocrText: \(rawText)")
-                self.extractProviderFromOCRText(rawText)
+                extractProviderFromOCRText(rawText)
             }
-        } else if let subscription = subscription {
+        } else if let subscription {
             // Pre-fill from existing subscription
-            self.name = subscription.name
-            self.amount = subscription.amount.amount
-            self.currencyCode = subscription.amount.currencyCode
-            self.selectedCadence = subscription.cadence
-            self.nextBillingDate = subscription.nextBillingDate ?? Date()
-            self.providerName = subscription.providerName ?? ""
-            self.notes = subscription.notes ?? ""
+            name = subscription.name
+            amount = subscription.amount.amount
+            currencyCode = subscription.amount.currencyCode
+            selectedCadence = subscription.cadence
+            nextBillingDate = subscription.nextBillingDate ?? Date()
+            providerName = subscription.providerName ?? ""
+            notes = subscription.notes ?? ""
         }
         validate()
         setupBindings()
     }
-    
+
     private func extractProviderFromOCRText(_ rawText: String) {
-        // The ocrText is a JSON string from OpenAIVisionParser
+        // The ocrText is a JSON string from OpenAIVisionParser/OpenAITextParser
         struct ParsedOCR: Decodable {
+            let subscriptionName: String?
             let providerName: String?
             let nextBillingDate: String?
             struct LineItem: Decodable {
                 let title: String
                 let amount: Decimal
             }
+
             let lineItems: [LineItem]?
         }
-        
+
         guard let jsonData = rawText.data(using: .utf8) else {
             logger.debug("[ReviewEditVM] Failed to convert ocrText to data")
             return
         }
-        
+
         do {
             let parsed = try JSONDecoder().decode(ParsedOCR.self, from: jsonData)
+
+            // Use subscriptionName if available, otherwise fall back to providerName
+            if let subscriptionName = parsed.subscriptionName {
+                logger.debug("[ReviewEditVM] Extracted subscriptionName: \(subscriptionName)")
+                name = subscriptionName
+            } else if let provider = parsed.providerName {
+                logger.debug("[ReviewEditVM] Using providerName as subscription name: \(provider)")
+                name = provider
+            }
+
+            // Always set providerName separately
             if let provider = parsed.providerName {
                 logger.debug("[ReviewEditVM] Extracted providerName: \(provider)")
-                self.name = provider
-                self.providerName = provider
+                providerName = provider
             }
             if let dateString = parsed.nextBillingDate {
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd"
                 if let date = formatter.date(from: dateString) {
                     logger.debug("[ReviewEditVM] Extracted nextBillingDate: \(dateString)")
-                    self.nextBillingDate = date
+                    nextBillingDate = date
                 }
             }
-            
+
             // Parse line items if invoice.lineItems was empty (fallback)
-            if self.lineItems.isEmpty, let items = parsed.lineItems {
-                self.lineItems = items.map { 
+            if lineItems.isEmpty, let items = parsed.lineItems {
+                lineItems = items.map {
                     SmartSubscriptionKit.Invoice.LineItem(title: $0.title, amount: Money(amount: $0.amount, currencyCode: self.currencyCode))
                 }
             }
@@ -115,8 +127,9 @@ final class ReviewEditViewModel: ObservableObject {
             // Fallback: Try first line if not JSON (legacy format)
             let lines = rawText.components(separatedBy: .newlines)
             if let first = lines.first, !first.hasPrefix("{") {
-                self.name = String(first.prefix(50))
-                self.providerName = self.name
+                let extractedName = String(first.prefix(50)).trimmingCharacters(in: .whitespacesAndNewlines)
+                name = extractedName
+                providerName = extractedName
             }
         }
     }
@@ -128,11 +141,11 @@ final class ReviewEditViewModel: ObservableObject {
     func save() async {
         isSaving = true
         saveError = nil
-        
+
         // If editing, preserve ID and start date
         let id = existingSubscription?.id ?? SmartSubscriptionKit.Subscription.ID()
         let startDate = existingSubscription?.startDate ?? Date()
-        
+
         let subscription = SmartSubscriptionKit.Subscription(
             id: id,
             name: name,
@@ -146,23 +159,23 @@ final class ReviewEditViewModel: ObservableObject {
             createdAt: existingSubscription?.createdAt ?? Date(),
             updatedAt: Date()
         )
-        
+
         do {
             if existingSubscription != nil {
                 try await subscriptionUseCase.updateSubscription(subscription)
             } else {
                 try await subscriptionUseCase.addSubscription(subscription)
             }
-            
+
             // If we have an original invoice (from OCR), save it associated with this subscription
             if var invoice = originalInvoice, let repo = invoiceRepository {
                 invoice.subscriptionID = subscription.id
                 // Update line items in case they were parsed differently or if we want to ensure consistency
-                invoice.lineItems = self.lineItems
+                invoice.lineItems = lineItems
                 try await repo.save(invoice)
                 logger.debug("[ReviewEditVM] Saved invoice with \(invoice.lineItems.count) line items")
             }
-            
+
             shouldDismiss = true
         } catch {
             saveError = error.localizedDescription
@@ -175,15 +188,15 @@ final class ReviewEditViewModel: ObservableObject {
             .dropFirst()
             .receive(on: RunLoop.main)
             .sink { [weak self] newCadence in
-                guard let self = self else { return }
-                self.recalculateNextBilling(cadence: newCadence)
+                guard let self else { return }
+                recalculateNextBilling(cadence: newCadence)
             }
             .store(in: &cancellables)
     }
 
     private func recalculateNextBilling(cadence: SmartSubscriptionKit.Subscription.BillingCadence) {
-        self.nextBillingDate = BillingCalculator.calculateNextBillingDate(
-            startDate: self.referenceStartDate,
+        nextBillingDate = BillingCalculator.calculateNextBillingDate(
+            startDate: referenceStartDate,
             cadence: cadence
         )
     }

@@ -5,6 +5,8 @@ public struct SettingsStore: Sendable {
         public static let openAIAPIKey = "OpenAIAPIKey"
         public static let selectedModel = "SelectedOpenAIModel"
         public static let isCloudKitSyncEnabled = "IsCloudKitSyncEnabled"
+        public static let parserMode = "ParserMode"
+        public static let defaultCurrency = "DefaultCurrency"
     }
 
     public static let shared = SettingsStore()
@@ -12,7 +14,7 @@ public struct SettingsStore: Sendable {
     public var keychain: KeychainStore
 
     public init(service: String = Bundle.main.bundleIdentifier ?? "SmartSubscription") {
-        self.keychain = KeychainStore(service: service)
+        keychain = KeychainStore(service: service)
     }
 
     public var selectedModel: String {
@@ -30,6 +32,33 @@ public struct SettingsStore: Sendable {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: Keys.isCloudKitSyncEnabled)
+        }
+    }
+
+    public var parserMode: ParserMode {
+        get {
+            if let rawValue = UserDefaults.standard.string(forKey: Keys.parserMode),
+               let mode = ParserMode(rawValue: rawValue)
+            {
+                return mode
+            }
+            return .normal // Default to normal mode for backward compatibility
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Keys.parserMode)
+        }
+    }
+
+    /// User's preferred currency for displaying subscription costs and statistics.
+    /// Defaults to the system locale currency, or USD if not available.
+    public var defaultCurrency: String {
+        get {
+            UserDefaults.standard.string(forKey: Keys.defaultCurrency)
+                ?? Locale.current.currency?.identifier
+                ?? "USD"
+        }
+        set {
+            UserDefaults.standard.set(newValue.uppercased(), forKey: Keys.defaultCurrency)
         }
     }
 

@@ -1,9 +1,9 @@
-import SwiftUI
 import Charts
+import SwiftUI
 #if os(macOS)
-import AppKit
+    import AppKit
 #elseif os(iOS)
-import UIKit
+    import UIKit
 #endif
 
 struct AnalyticsDashboardView: View {
@@ -18,13 +18,13 @@ struct AnalyticsDashboardView: View {
                     Text("Total Monthly Spend")
                         .font(.headline)
                         .foregroundStyle(Color.secondaryText)
-                    
-                    Text(viewModel.totalSpend.formatted(.currency(code: "USD")))
-                        #if os(iOS)
+
+                    Text(viewModel.totalSpend.formattedAsCurrency(code: viewModel.displayCurrency))
+                    #if os(iOS)
                         .font(.system(size: 36, weight: .bold, design: .rounded))
-                        #else
+                    #else
                         .font(.system(size: 48, weight: .bold, design: .rounded))
-                        #endif
+                    #endif
                         .foregroundStyle(Color.primaryText)
                 }
                 .padding(.top, 24)
@@ -34,7 +34,7 @@ struct AnalyticsDashboardView: View {
                     Text("Spend by Provider")
                         .font(.title3)
                         .bold()
-                    
+
                     Chart(viewModel.spendByCategory, id: \.0) { item in
                         BarMark(
                             x: .value("Amount", item.1),
@@ -42,7 +42,7 @@ struct AnalyticsDashboardView: View {
                         )
                         .foregroundStyle(Color.SmartSubscriptionMainGradient)
                         .annotation(position: .trailing) {
-                            Text(item.1.formatted(.currency(code: "USD")))
+                            Text(item.1.formattedAsCurrency(code: viewModel.displayCurrency))
                                 .font(.caption)
                                 .foregroundStyle(Color.secondaryText)
                         }
@@ -55,13 +55,13 @@ struct AnalyticsDashboardView: View {
                 }
                 .padding()
                 #if os(macOS)
-                .background(Color(nsColor: .windowBackgroundColor))
+                    .background(Color(nsColor: .windowBackgroundColor))
                 #else
-                .background(Color(uiColor: .secondarySystemBackground))
+                    .background(Color(uiColor: .secondarySystemBackground))
                 #endif
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.05), radius: 8)
-                .padding(.horizontal)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 8)
+                    .padding(.horizontal)
 
                 // Trend
                 VStack(alignment: .leading, spacing: 16) {
@@ -85,13 +85,13 @@ struct AnalyticsDashboardView: View {
                 }
                 .padding()
                 #if os(macOS)
-                .background(Color(nsColor: .windowBackgroundColor))
+                    .background(Color(nsColor: .windowBackgroundColor))
                 #else
-                .background(Color(uiColor: .secondarySystemBackground))
+                    .background(Color(uiColor: .secondarySystemBackground))
                 #endif
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.05), radius: 8)
-                .padding(.horizontal)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 8)
+                    .padding(.horizontal)
             }
         }
         #if os(macOS)
@@ -101,10 +101,10 @@ struct AnalyticsDashboardView: View {
         #endif
         .navigationTitle("Analytics")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.large)
         #endif
-        .task {
-            await viewModel.loadAnalytics()
-        }
+            .task {
+                await viewModel.loadAnalytics()
+            }
     }
 }

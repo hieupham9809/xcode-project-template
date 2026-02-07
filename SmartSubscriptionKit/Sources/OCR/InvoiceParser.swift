@@ -8,6 +8,7 @@ public enum InvoiceParserError: Error, Sendable {
     case unauthorized
     case rateLimited
     case cancelled
+    case ocrFailed(OCRError)
 }
 
 public protocol InvoiceParser: Sendable {

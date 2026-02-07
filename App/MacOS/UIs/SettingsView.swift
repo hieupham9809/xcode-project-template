@@ -1,7 +1,7 @@
-import SwiftUI
 import SmartSubscriptionKit
+import SwiftUI
 #if os(iOS)
-import UIKit
+    import UIKit
 #endif
 
 struct SettingsView: View {
@@ -10,7 +10,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     #if os(iOS)
-    @FocusState private var isAPIKeyFocused: Bool
+        @FocusState private var isAPIKeyFocused: Bool
     #endif
 
     @MainActor
@@ -26,19 +26,19 @@ struct SettingsView: View {
                     .onSubmit {
                         viewModel.saveAPIKey()
                     }
-                    #if os(iOS)
+                #if os(iOS)
                     .focused($isAPIKeyFocused)
                     .textContentType(.password)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
-                    #endif
+                #endif
 
                 #if os(iOS)
-                if !viewModel.apiKey.isEmpty {
-                    Text("API Key: \u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\(String(viewModel.apiKey.suffix(4)))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                    if !viewModel.apiKey.isEmpty {
+                        Text("API Key: \u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\(String(viewModel.apiKey.suffix(4)))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 #endif
 
                 Picker("OCR Model", selection: $viewModel.selectedModel) {
@@ -52,11 +52,90 @@ struct SettingsView: View {
                 Text("AI Configuration")
             } footer: {
                 #if os(iOS)
-                Text("Your API key is stored securely in the iOS Keychain.")
-                    .font(.caption)
+                    Text("Your API key is stored securely in the iOS Keychain.")
+                        .font(.caption)
                 #else
-                EmptyView()
+                    EmptyView()
                 #endif
+            }
+
+            Section {
+                Picker("Parsing Mode", selection: $viewModel.parserMode) {
+                    ForEach(ParserMode.allCases, id: \.self) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: viewModel.parserMode) { newValue in
+                    viewModel.updateParserMode(newValue)
+                }
+
+                Text(viewModel.parserMode.description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                // Token savings indicator
+                HStack {
+                    Image(systemName: "chart.bar.fill")
+                        .foregroundColor(.green)
+                    Text("Token Savings: \(viewModel.parserMode.tokenSavings)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            } header: {
+                Text("Invoice Parsing")
+            } footer: {
+                Text(viewModel.parserMode.detailedDescription)
+                    .font(.caption)
+            }
+
+            Section {
+                Picker("Default Currency", selection: $viewModel.defaultCurrency) {
+                    ForEach(viewModel.supportedCurrencies) { currency in
+                        Text("\(currency.symbol) \(currency.code) - \(currency.name)")
+                            .tag(currency.code)
+                    }
+                }
+                .onChange(of: viewModel.defaultCurrency) { newValue in
+                    viewModel.updateDefaultCurrency(newValue)
+                }
+
+                HStack {
+                    Button {
+                        Task {
+                            await viewModel.updateExchangeRates()
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Update Exchange Rates")
+                        }
+                    }
+                    .disabled(viewModel.isUpdatingRates)
+
+                    Spacer()
+
+                    if viewModel.isUpdatingRates {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                    }
+                }
+
+                if let lastUpdate = viewModel.lastRatesUpdate {
+                    HStack {
+                        Image(systemName: "clock")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                        Text("Last updated: \(lastUpdate, style: .relative)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } header: {
+                Text("Currency")
+            } footer: {
+                Text("All subscription amounts will be converted to your default currency for statistics. Exchange rates are fetched from an online source.")
+                    .font(.caption)
             }
 
             Section {
@@ -107,10 +186,10 @@ struct SettingsView: View {
                 Text("Data")
             } footer: {
                 #if os(iOS)
-                Text("Sync your subscriptions across all your devices using iCloud.")
-                    .font(.caption)
+                    Text("Sync your subscriptions across all your devices using iCloud.")
+                        .font(.caption)
                 #else
-                EmptyView()
+                    EmptyView()
                 #endif
             }
 
@@ -118,63 +197,63 @@ struct SettingsView: View {
                 LabeledContent("Version", value: "1.0.0 (1)")
 
                 #if os(iOS)
-                Link(destination: URL(string: "https://example.com/privacy")!) {
-                    HStack {
-                        Text("Privacy Policy")
-                        Spacer()
-                        Image(systemName: "arrow.up.right.square")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    Link(destination: URL(string: "https://example.com/privacy")!) {
+                        HStack {
+                            Text("Privacy Policy")
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                }
                 #else
-                Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
+                    Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
                 #endif
             }
         }
         .formStyle(.grouped)
         .navigationTitle("Settings")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
         #endif
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") {
-                    viewModel.saveAPIKey()
-                    dismiss()
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        viewModel.saveAPIKey()
+                        dismiss()
+                    }
+                    #if os(iOS)
+                    .fontWeight(.semibold)
+                    #endif
                 }
                 #if os(iOS)
-                .fontWeight(.semibold)
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            isAPIKeyFocused = false
+                        }
+                    }
                 #endif
             }
-            #if os(iOS)
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    isAPIKeyFocused = false
+        #if os(iOS)
+            .sheet(isPresented: $viewModel.isShowingShareSheet) {
+                if let url = viewModel.exportedFileURL {
+                    ShareSheet(items: [url])
+                        .presentationDetents([.medium, .large])
                 }
             }
-            #endif
-        }
-        #if os(iOS)
-        .sheet(isPresented: $viewModel.isShowingShareSheet) {
-            if let url = viewModel.exportedFileURL {
-                ShareSheet(items: [url])
-                    .presentationDetents([.medium, .large])
-            }
-        }
         #endif
     }
 }
 
 #if os(iOS)
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
+    struct ShareSheet: UIViewControllerRepresentable {
+        let items: [Any]
 
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        func makeUIViewController(context: Context) -> UIActivityViewController {
+            UIActivityViewController(activityItems: items, applicationActivities: nil)
+        }
+
+        func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
     }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
 #endif

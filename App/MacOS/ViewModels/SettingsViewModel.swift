@@ -1,16 +1,18 @@
+import CloudKit
+import Combine
 import Foundation
 import SmartSubscriptionKit
-import Combine
-import CloudKit
 
 extension Notification.Name {
     static let cloudKitSyncToggled = Notification.Name("cloudKitSyncToggled")
+    static let defaultCurrencyChanged = Notification.Name("defaultCurrencyChanged")
 }
 
 @MainActor
 final class SettingsViewModel: ObservableObject {
     @Published var apiKey: String = ""
     @Published var selectedModel: String = "gpt-4o-mini"
+    @Published var parserMode: ParserMode = .normal
     @Published var isCloudKitSyncEnabled: Bool = false
     @Published var lastSyncDate: Date?
 
@@ -23,28 +25,51 @@ final class SettingsViewModel: ObservableObject {
     @Published var exportedFileURL: URL?
     @Published var isShowingShareSheet: Bool = false
 
+    // Currency Settings
+    @Published var defaultCurrency: String = "USD"
+    @Published var isUpdatingRates: Bool = false
+    @Published var lastRatesUpdate: Date?
+    @Published var supportedCurrencies: [CurrencyInfo] = CurrencyInfo.commonCurrencies
+
     private var settingsStore: SettingsStore
     private var subscriptionUseCase: SubscriptionUseCase?
+    private let currencyConverter: CurrencyConverter
 
-    init(settingsStore: SettingsStore = .shared, subscriptionUseCase: SubscriptionUseCase? = nil) {
+    init(
+        settingsStore: SettingsStore = .shared,
+        subscriptionUseCase: SubscriptionUseCase? = nil,
+        currencyConverter: CurrencyConverter = CurrencyConverter()
+    ) {
         self.settingsStore = settingsStore
         self.subscriptionUseCase = subscriptionUseCase
+        self.currencyConverter = currencyConverter
         loadSettings()
     }
-    
+
     func loadSettings() {
-        self.selectedModel = settingsStore.selectedModel
-        self.isCloudKitSyncEnabled = settingsStore.isCloudKitSyncEnabled
-        
+        selectedModel = settingsStore.selectedModel
+        parserMode = settingsStore.parserMode
+        isCloudKitSyncEnabled = settingsStore.isCloudKitSyncEnabled
+        defaultCurrency = settingsStore.defaultCurrency
+
         do {
             if let key = try settingsStore.getOpenAIAPIKey() {
-                self.apiKey = key
+                apiKey = key
             }
         } catch {
             print("Failed to load API key: \(error)")
         }
+
+        // Load cached exchange rates info
+        Task {
+            if let rates = await currencyConverter.exchangeRates {
+                await MainActor.run {
+                    self.lastRatesUpdate = rates.lastUpdated
+                }
+            }
+        }
     }
-    
+
     func saveAPIKey() {
         do {
             try settingsStore.setOpenAIAPIKey(apiKey)
@@ -52,12 +77,47 @@ final class SettingsViewModel: ObservableObject {
             errorMessage = "Failed to save API Key: \(error.localizedDescription)"
         }
     }
-    
+
     func updateModel(_ model: String) {
         selectedModel = model
         settingsStore.selectedModel = model
     }
-    
+
+    func updateParserMode(_ mode: ParserMode) {
+        parserMode = mode
+        settingsStore.parserMode = mode
+    }
+
+    // MARK: - Currency Management
+
+    func updateDefaultCurrency(_ currency: String) {
+        defaultCurrency = currency
+        settingsStore.defaultCurrency = currency
+
+        // Notify other view models to recalculate with new currency
+        NotificationCenter.default.post(
+            name: .defaultCurrencyChanged,
+            object: nil,
+            userInfo: ["currency": currency]
+        )
+    }
+
+    func updateExchangeRates() async {
+        isUpdatingRates = true
+        defer { isUpdatingRates = false }
+
+        do {
+            try await currencyConverter.refreshRates()
+            if let rates = await currencyConverter.exchangeRates {
+                lastRatesUpdate = rates.lastUpdated
+            }
+        } catch {
+            errorMessage = "Failed to update exchange rates: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - CloudKit Sync
+
     func toggleCloudKitSync(_ isEnabled: Bool) async {
         isCheckingCloudKit = true
         defer { isCheckingCloudKit = false }
@@ -183,10 +243,10 @@ private extension String {
 private extension SmartSubscriptionKit.Subscription.BillingCadence {
     var csvDescription: String {
         switch self {
-        case .weekly: return "Weekly"
-        case .monthly: return "Monthly"
-        case .yearly: return "Yearly"
-        case .customDays(let days): return "Every \(days) days"
+        case .weekly: "Weekly"
+        case .monthly: "Monthly"
+        case .yearly: "Yearly"
+        case let .customDays(days): "Every \(days) days"
         }
     }
 }
