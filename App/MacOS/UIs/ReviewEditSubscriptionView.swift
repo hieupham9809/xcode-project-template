@@ -33,6 +33,8 @@ struct ReviewEditSubscriptionView: View {
                     .textContentType(.organizationName)
                     .autocorrectionDisabled()
                 #endif
+                
+                CategoryPickerView(selection: $viewModel.categoryID)
             }
 
             if !viewModel.lineItems.isEmpty {

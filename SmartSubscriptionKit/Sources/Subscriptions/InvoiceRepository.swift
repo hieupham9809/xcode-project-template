@@ -55,6 +55,17 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
     }
 
     public func save(_ invoice: Invoice) async throws {
+        // Persist image if needed before saving entity
+        var persistentImageURL: URL? = invoice.sourceImageURL
+        if let sourceURL = invoice.sourceImageURL {
+            do {
+                persistentImageURL = try persistImage(from: sourceURL, for: invoice.id)
+            } catch {
+                print("Failed to persist image: \(error)")
+                // Fallback to original URL if persistence fails, though it might be temporary
+            }
+        }
+
         try await stack.performBackground { context in
             let subscription = try fetchSubscriptionEntity(id: invoice.subscriptionID, in: context)
             let entity = try findOrCreateInvoiceEntity(for: invoice.id, in: context)
@@ -63,13 +74,14 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
             entity.invoiceDate = invoice.invoiceDate
             entity.totalAmount = NSDecimalNumber(decimal: invoice.total.amount)
             entity.totalCurrencyCode = invoice.total.currencyCode
-            entity.sourceImageURLString = invoice.sourceImageURL?.absoluteString
+            entity.sourceImageURLString = persistentImageURL?.absoluteString // Use persistent URL
+            entity.lineItems.forEach { context.delete($0) }
+            entity.lineItems.removeAll()
+            // ... (rest of usage)
             entity.ocrText = invoice.ocrText
             entity.createdAt = invoice.createdAt
             entity.subscription = subscription
 
-            entity.lineItems.forEach { context.delete($0) }
-            entity.lineItems.removeAll()
             invoice.lineItems.forEach { item in
                 let entityDescription = NSEntityDescription.entity(forEntityName: "InvoiceLineItemEntity", in: context)
                 let itemEntity = InvoiceLineItemEntity(entity: entityDescription!, insertInto: context)
@@ -87,6 +99,34 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
         }
     }
 
+    private func persistImage(from sourceURL: URL, for id: Invoice.ID) throws -> URL {
+        let fileManager = FileManager.default
+        guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return sourceURL
+        }
+
+        let invoicesDirectory = documentsURL.appendingPathComponent("Invoices", isDirectory: true)
+        if !fileManager.fileExists(atPath: invoicesDirectory.path) {
+            try fileManager.createDirectory(at: invoicesDirectory, withIntermediateDirectories: true)
+        }
+
+        let destinationURL = invoicesDirectory.appendingPathComponent("\(id.rawValue.uuidString).jpg")
+
+        // If source is already the destination, return
+        if sourceURL.path == destinationURL.path {
+            return destinationURL
+        }
+
+        // Remove existing file at destination if needed
+        if fileManager.fileExists(atPath: destinationURL.path) {
+            try fileManager.removeItem(at: destinationURL)
+        }
+
+        // Copy item (copy is safer than move if source is needed elsewhere temporarily)
+        try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        return destinationURL
+    }
+
     public func delete(id: Invoice.ID) async throws {
         try await stack.performBackground { context in
             let request = NSFetchRequest<InvoiceEntity>(entityName: "InvoiceEntity")
@@ -95,6 +135,15 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
             guard let entity = try context.fetch(request).first else {
                 throw InvoiceRepositoryError.invoiceNotFound
             }
+
+            // Cleanup image file
+            if let urlString = entity.sourceImageURLString,
+               let url = URL(string: urlString),
+               url.path.contains("Documents/Invoices") // Safety check
+            {
+                try? FileManager.default.removeItem(at: url)
+            }
+
             context.delete(entity)
             if context.hasChanges {
                 try context.save()

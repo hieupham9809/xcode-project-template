@@ -9,7 +9,7 @@ public struct Subscription: Identifiable, Hashable, Codable, Sendable {
         }
 
         public init() {
-            self.rawValue = UUID()
+            rawValue = UUID()
         }
     }
 
@@ -49,7 +49,7 @@ public struct Subscription: Identifiable, Hashable, Codable, Sendable {
             case .yearly:
                 self = .yearly
             case .customDays:
-                self = .customDays(try container.decode(Int.self, forKey: .customDays))
+                self = try .customDays(container.decode(Int.self, forKey: .customDays))
             }
         }
 
@@ -75,6 +75,7 @@ public struct Subscription: Identifiable, Hashable, Codable, Sendable {
     public var providerName: String?
     public var amount: Money
     public var cadence: BillingCadence
+    public var categoryID: SubscriptionCategory.ID? // NEW: Optional, backwards compatible
     public var startDate: Date
     public var nextBillingDate: Date?
     public var status: Status
@@ -89,6 +90,7 @@ public struct Subscription: Identifiable, Hashable, Codable, Sendable {
         amount: Money,
         cadence: BillingCadence,
         startDate: Date,
+        categoryID: SubscriptionCategory.ID? = nil,
         nextBillingDate: Date? = nil,
         status: Status = .active,
         notes: String? = nil,
@@ -101,6 +103,7 @@ public struct Subscription: Identifiable, Hashable, Codable, Sendable {
         self.amount = amount
         self.cadence = cadence
         self.startDate = startDate
+        self.categoryID = categoryID
         self.nextBillingDate = nextBillingDate
         self.status = status
         self.notes = notes
@@ -109,3 +112,29 @@ public struct Subscription: Identifiable, Hashable, Codable, Sendable {
     }
 }
 
+// MARK: - Billing Urgency
+
+public extension Subscription {
+    enum BillingUrgency: Sendable {
+        case urgent // 0-3 days
+        case warning // 4-7 days
+        case safe // 7+ days
+        case unknown // No billing date
+    }
+
+    var billingUrgency: BillingUrgency {
+        guard let nextDate = nextBillingDate else { return .unknown }
+        let daysUntilBilling = Calendar.current.dateComponents([.day], from: Date(), to: nextDate).day ?? 0
+
+        switch daysUntilBilling {
+        case ...3: return .urgent
+        case 4 ... 7: return .warning
+        default: return .safe
+        }
+    }
+
+    var daysUntilBilling: Int? {
+        guard let nextDate = nextBillingDate else { return nil }
+        return Calendar.current.dateComponents([.day], from: Date(), to: nextDate).day
+    }
+}

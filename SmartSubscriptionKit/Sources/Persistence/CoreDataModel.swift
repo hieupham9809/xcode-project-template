@@ -94,7 +94,45 @@ enum CoreDataModelFactory {
         invoice.properties.append(invoiceToLineItems)
         lineItem.properties.append(lineItemToInvoice)
 
-        model.entities = [subscription, invoice, lineItem]
+        // CategoryEntity definition
+        let category = NSEntityDescription()
+        category.name = "CategoryEntity"
+        category.managedObjectClassName = NSStringFromClass(CategoryEntity.self)
+        category.properties = [
+            uuidAttribute(name: "id"),
+            stringAttribute(name: "name"),
+            stringAttribute(name: "colorHex"),
+            stringAttribute(name: "iconName"),
+            int64Attribute(name: "sortOrder"),
+            dateAttribute(name: "createdAt"),
+            dateAttribute(name: "updatedAt"),
+        ]
+        category.uniquenessConstraints = [["id"]]
+
+        // Relationships
+        let categoryToSubscriptions = NSRelationshipDescription()
+        categoryToSubscriptions.name = "subscriptions"
+        categoryToSubscriptions.destinationEntity = subscription
+        categoryToSubscriptions.minCount = 0
+        categoryToSubscriptions.maxCount = 0 // to-many
+        categoryToSubscriptions.deleteRule = .nullifyDeleteRule // Don't cascade delete
+        categoryToSubscriptions.isOptional = true
+
+        let subscriptionToCategory = NSRelationshipDescription()
+        subscriptionToCategory.name = "category"
+        subscriptionToCategory.destinationEntity = category
+        subscriptionToCategory.minCount = 0
+        subscriptionToCategory.maxCount = 1 // to-one
+        subscriptionToCategory.deleteRule = .nullifyDeleteRule
+        subscriptionToCategory.isOptional = true
+
+        categoryToSubscriptions.inverseRelationship = subscriptionToCategory
+        subscriptionToCategory.inverseRelationship = categoryToSubscriptions
+
+        category.properties.append(categoryToSubscriptions)
+        subscription.properties.append(subscriptionToCategory)
+
+        model.entities = [subscription, invoice, lineItem, category]
         return model
     }
 }

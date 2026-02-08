@@ -12,6 +12,7 @@ final class ReviewEditViewModel: ObservableObject {
     @Published var providerName: String = ""
     @Published var notes: String = ""
     @Published var lineItems: [SmartSubscriptionKit.Invoice.LineItem] = []
+    @Published var categoryID: SmartSubscriptionKit.SubscriptionCategory.ID?
 
     @Published var isValid: Bool = false
     @Published var isSaving: Bool = false
@@ -66,6 +67,7 @@ final class ReviewEditViewModel: ObservableObject {
             nextBillingDate = subscription.nextBillingDate ?? Date()
             providerName = subscription.providerName ?? ""
             notes = subscription.notes ?? ""
+            categoryID = subscription.categoryID
         }
         validate()
         setupBindings()
@@ -76,7 +78,7 @@ final class ReviewEditViewModel: ObservableObject {
         struct ParsedOCR: Decodable {
             let subscriptionName: String?
             let providerName: String?
-            let nextBillingDate: String?
+            let billingCycle: String?
             struct LineItem: Decodable {
                 let title: String
                 let amount: Decimal
@@ -107,13 +109,19 @@ final class ReviewEditViewModel: ObservableObject {
                 logger.debug("[ReviewEditVM] Extracted providerName: \(provider)")
                 providerName = provider
             }
-            if let dateString = parsed.nextBillingDate {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                if let date = formatter.date(from: dateString) {
-                    logger.debug("[ReviewEditVM] Extracted nextBillingDate: \(dateString)")
-                    nextBillingDate = date
+
+            // Set billing cycle
+            if let cycle = parsed.billingCycle {
+                logger.debug("[ReviewEditVM] Extracted billingCycle: \(cycle)")
+                switch cycle.lowercased() {
+                case "weekly": selectedCadence = .weekly
+                case "monthly": selectedCadence = .monthly
+                case "yearly": selectedCadence = .yearly
+                default: break
                 }
+
+                // Recalculate billing date based on the extracted cadence and start date
+                recalculateNextBilling(cadence: selectedCadence)
             }
 
             // Parse line items if invoice.lineItems was empty (fallback)
@@ -153,6 +161,7 @@ final class ReviewEditViewModel: ObservableObject {
             amount: Money(amount: amount, currencyCode: currencyCode),
             cadence: selectedCadence,
             startDate: startDate,
+            categoryID: categoryID,
             nextBillingDate: nextBillingDate,
             status: .active,
             notes: notes.isEmpty ? nil : notes,

@@ -10,9 +10,8 @@ extension Notification.Name {
 
 @MainActor
 final class SettingsViewModel: ObservableObject {
-    @Published var apiKey: String = ""
-    @Published var selectedModel: String = "gpt-4o-mini"
-    @Published var parserMode: ParserMode = .normal
+    @Published var selectedModel: String = AppConfiguration.openAIModel
+    @Published var parserMode: ParserMode = .optimizing
     @Published var isCloudKitSyncEnabled: Bool = false
     @Published var lastSyncDate: Date?
 
@@ -52,14 +51,6 @@ final class SettingsViewModel: ObservableObject {
         isCloudKitSyncEnabled = settingsStore.isCloudKitSyncEnabled
         defaultCurrency = settingsStore.defaultCurrency
 
-        do {
-            if let key = try settingsStore.getOpenAIAPIKey() {
-                apiKey = key
-            }
-        } catch {
-            print("Failed to load API key: \(error)")
-        }
-
         // Load cached exchange rates info
         Task {
             if let rates = await currencyConverter.exchangeRates {
@@ -70,23 +61,7 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    func saveAPIKey() {
-        do {
-            try settingsStore.setOpenAIAPIKey(apiKey)
-        } catch {
-            errorMessage = "Failed to save API Key: \(error.localizedDescription)"
-        }
-    }
-
-    func updateModel(_ model: String) {
-        selectedModel = model
-        settingsStore.selectedModel = model
-    }
-
-    func updateParserMode(_ mode: ParserMode) {
-        parserMode = mode
-        settingsStore.parserMode = mode
-    }
+    // AI Configuration methods removed as they are now hardcoded
 
     // MARK: - Currency Management
 

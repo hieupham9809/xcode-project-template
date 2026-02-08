@@ -18,12 +18,7 @@ public struct SettingsStore: Sendable {
     }
 
     public var selectedModel: String {
-        get {
-            UserDefaults.standard.string(forKey: Keys.selectedModel) ?? "gpt-4o-mini"
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: Keys.selectedModel)
-        }
+        AppConfiguration.openAIModel
     }
 
     public var isCloudKitSyncEnabled: Bool {
@@ -36,17 +31,7 @@ public struct SettingsStore: Sendable {
     }
 
     public var parserMode: ParserMode {
-        get {
-            if let rawValue = UserDefaults.standard.string(forKey: Keys.parserMode),
-               let mode = ParserMode(rawValue: rawValue)
-            {
-                return mode
-            }
-            return .normal // Default to normal mode for backward compatibility
-        }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: Keys.parserMode)
-        }
+        .optimizing
     }
 
     /// User's preferred currency for displaying subscription costs and statistics.
@@ -62,29 +47,9 @@ public struct SettingsStore: Sendable {
         }
     }
 
-    public func getOpenAIAPIKey() throws -> String? {
-        let value = try keychain.getString(forKey: Keys.openAIAPIKey)
-        if let value, value.isEmpty {
-            return nil
-        }
-        return value
-    }
-
-    public func setOpenAIAPIKey(_ value: String?) throws {
-        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let trimmed, !trimmed.isEmpty {
-            try keychain.set(trimmed, forKey: Keys.openAIAPIKey)
-        } else {
-            try keychain.delete(forKey: Keys.openAIAPIKey)
-        }
-    }
-
     public var openAIAPIKey: String? {
-        get {
-            try? getOpenAIAPIKey()
-        }
-        set {
-            try? setOpenAIAPIKey(newValue)
-        }
+        // Return the hardcoded key from AppConfiguration
+        let key = AppConfiguration.openAIAPIKey
+        return key.isEmpty ? nil : key
     }
 }

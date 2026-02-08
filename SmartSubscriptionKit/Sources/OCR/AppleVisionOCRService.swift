@@ -29,56 +29,56 @@ public actor AppleVisionOCRService: OCRService {
         }
 
         // Perform OCR based on OS version
-        if #available(iOS 26.0, macOS 15.0, *) {
-            return try await extractTextWithDocumentRecognition(cgImage: cgImage)
-        } else {
-            return try await extractTextWithBasicRecognition(cgImage: cgImage)
-        }
+//        if #available(iOS 26.0, macOS 15.0, *) {
+//            return try await extractTextWithDocumentRecognition(cgImage: cgImage)
+//        } else {
+        return try await extractTextWithBasicRecognition(cgImage: cgImage)
+//        }
     }
 
     // MARK: - iOS 18+ / macOS 15+ Implementation (Structured Document Recognition)
 
-    @available(iOS 26.0, macOS 15.0, *)
-    private func extractTextWithDocumentRecognition(cgImage: CGImage) async throws -> String {
-        var request = RecognizeDocumentsRequest()
-
-        // Enable language correction to fix OCR errors (e.g., '0' vs 'O')
-        request.textRecognitionOptions.useLanguageCorrection = true
-
-        // Create image request handler
-        let handler = ImageRequestHandler(cgImage)
-
-        logger.debug("[OCR] Using RecognizeDocumentsRequest for structured text extraction")
-
-        do {
-            // Perform the request using async/await
-            let observations = try await handler.perform(request)
-
-            // Process the results
-            guard let document = observations.first?.document else {
-                logger.warning("[OCR] No document structure detected")
-                throw OCRError.noTextDetected
-            }
-
-            // Build formatted text from paragraphs to preserve structure
-            var fullText = ""
-            for paragraph in document.paragraphs {
-                fullText += paragraph.transcript + "\n"
-            }
-
-            guard !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                throw OCRError.noTextDetected
-            }
-
-            logger.debug("[OCR] Successfully extracted \(fullText.count) characters")
-            return fullText
-        } catch let error as OCRError {
-            throw error
-        } catch {
-            logger.error("[OCR] Document recognition failed: \(error.localizedDescription)")
-            throw OCRError.imageProcessingFailed(error.localizedDescription)
-        }
-    }
+//    @available(iOS 26.0, macOS 15.0, *)
+//    private func extractTextWithDocumentRecognition(cgImage: CGImage) async throws -> String {
+//        var request = RecognizeDocumentsRequest()
+//
+//        // Enable language correction to fix OCR errors (e.g., '0' vs 'O')
+//        request.textRecognitionOptions.useLanguageCorrection = true
+//
+//        // Create image request handler
+//        let handler = ImageRequestHandler(cgImage)
+//
+//        logger.debug("[OCR] Using RecognizeDocumentsRequest for structured text extraction")
+//
+//        do {
+//            // Perform the request using async/await
+//            let observations = try await handler.perform(request)
+//
+//            // Process the results
+//            guard let document = observations.first?.document else {
+//                logger.warning("[OCR] No document structure detected")
+//                throw OCRError.noTextDetected
+//            }
+//
+//            // Build formatted text from paragraphs to preserve structure
+//            var fullText = ""
+//            for paragraph in document.paragraphs {
+//                fullText += paragraph.transcript + "\n"
+//            }
+//
+//            guard !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+//                throw OCRError.noTextDetected
+//            }
+//
+//            logger.debug("[OCR] Successfully extracted \(fullText.count) characters")
+//            return fullText
+//        } catch let error as OCRError {
+//            throw error
+//        } catch {
+//            logger.error("[OCR] Document recognition failed: \(error.localizedDescription)")
+//            throw OCRError.imageProcessingFailed(error.localizedDescription)
+//        }
+//    }
 
     // MARK: - iOS 16+ / macOS 13+ Fallback (Basic Text Recognition)
 

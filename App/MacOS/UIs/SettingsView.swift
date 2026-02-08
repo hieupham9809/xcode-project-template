@@ -9,9 +9,7 @@ struct SettingsView: View {
     @Binding var path: NavigationPath
     @Environment(\.dismiss) private var dismiss
 
-    #if os(iOS)
-        @FocusState private var isAPIKeyFocused: Bool
-    #endif
+    // FocusState removed as API Key field is gone
 
     @MainActor
     init(viewModel: SettingsViewModel? = nil, path: Binding<NavigationPath>) {
@@ -21,73 +19,8 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section {
-                SecureField("OpenAI API Key", text: $viewModel.apiKey)
-                    .onSubmit {
-                        viewModel.saveAPIKey()
-                    }
-                #if os(iOS)
-                    .focused($isAPIKeyFocused)
-                    .textContentType(.password)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                #endif
-
-                #if os(iOS)
-                    if !viewModel.apiKey.isEmpty {
-                        Text("API Key: \u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\(String(viewModel.apiKey.suffix(4)))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                #endif
-
-                Picker("OCR Model", selection: $viewModel.selectedModel) {
-                    Text("GPT-4o Mini (Faster)").tag("gpt-4o-mini")
-                    Text("GPT-4o (More Accurate)").tag("gpt-4o")
-                }
-                .onChange(of: viewModel.selectedModel) { newValue in
-                    viewModel.updateModel(newValue)
-                }
-            } header: {
-                Text("AI Configuration")
-            } footer: {
-                #if os(iOS)
-                    Text("Your API key is stored securely in the iOS Keychain.")
-                        .font(.caption)
-                #else
-                    EmptyView()
-                #endif
-            }
-
-            Section {
-                Picker("Parsing Mode", selection: $viewModel.parserMode) {
-                    ForEach(ParserMode.allCases, id: \.self) { mode in
-                        Text(mode.displayName).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: viewModel.parserMode) { newValue in
-                    viewModel.updateParserMode(newValue)
-                }
-
-                Text(viewModel.parserMode.description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                // Token savings indicator
-                HStack {
-                    Image(systemName: "chart.bar.fill")
-                        .foregroundColor(.green)
-                    Text("Token Savings: \(viewModel.parserMode.tokenSavings)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            } header: {
-                Text("Invoice Parsing")
-            } footer: {
-                Text(viewModel.parserMode.detailedDescription)
-                    .font(.caption)
-            }
+            // AI Configuration and Invoice Parsing are now handled automatically
+            // and hidden from the user.
 
             Section {
                 Picker("Default Currency", selection: $viewModel.defaultCurrency) {
@@ -136,6 +69,12 @@ struct SettingsView: View {
             } footer: {
                 Text("All subscription amounts will be converted to your default currency for statistics. Exchange rates are fetched from an online source.")
                     .font(.caption)
+            }
+
+            Section(header: Text("Organization")) {
+                NavigationLink(value: NavigationRoute.categoryManagement) {
+                    Text("Manage Categories")
+                }
             }
 
             Section {
@@ -219,21 +158,12 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
-                        viewModel.saveAPIKey()
                         dismiss()
                     }
                     #if os(iOS)
                     .fontWeight(.semibold)
                     #endif
                 }
-                #if os(iOS)
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            isAPIKeyFocused = false
-                        }
-                    }
-                #endif
             }
         #if os(iOS)
             .sheet(isPresented: $viewModel.isShowingShareSheet) {

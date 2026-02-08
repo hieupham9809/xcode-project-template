@@ -41,6 +41,9 @@ targets:
           CODE_SIGN_ENTITLEMENTS: App/App_non_sandbox.entitlements
     sources:
       - path: ./App/MacOS
+      - path: ./App/MacOS/UseCases
+      - path: ./App/MacOS/ViewModels
+      - path: ./App/MacOS/UIs
     dependencies:
       - sdk: StoreKit.framework
       - package: SmartSubscriptionKit
@@ -178,6 +181,7 @@ targets:
       - path: ./App/MacOS/ViewModels/HomeDashboardViewModel.swift
       - path: ./App/MacOS/ViewModels/ReviewEditViewModel.swift
       - path: ./App/MacOS/UseCases/SubscriptionUseCase.swift
+      - path: ./App/MacOS/UseCases/CategoryUseCase.swift
     dependencies:
       - package: SmartSubscriptionKit
         products:

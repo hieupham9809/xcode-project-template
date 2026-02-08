@@ -12,12 +12,12 @@ struct SubscriptionDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     #if os(iOS)
-        @State private var showingImageViewer = false
-        @State private var selectedInvoiceURL: URL?
+        @State private var selectedInvoiceImage: InvoiceImageWrapper?
     #endif
 
     var body: some View {
         ScrollView {
+            // ... (rest of body content is unchanged by this specific replacement block targeting state/modifiers)
             VStack(spacing: 32) {
                 // Header
                 VStack(spacing: 16) {
@@ -153,16 +153,21 @@ struct SubscriptionDetailView: View {
                 }
             }
         #if os(iOS)
-            .sheet(isPresented: $showingImageViewer) {
-                if let url = selectedInvoiceURL {
-                    ImageViewer(imageURL: url)
-                }
+            .fullScreenCover(item: $selectedInvoiceImage) { wrapper in
+                ImageViewer(imageURL: wrapper.url)
             }
         #endif
             .task {
                 await viewModel.loadInvoices()
             }
     }
+
+    #if os(iOS)
+        struct InvoiceImageWrapper: Identifiable {
+            let id = UUID()
+            let url: URL
+        }
+    #endif
 
     #if os(iOS)
         @ViewBuilder
@@ -188,8 +193,7 @@ struct SubscriptionDetailView: View {
                                         .cornerRadius(8)
                                         .clipped()
                                         .onTapGesture {
-                                            selectedInvoiceURL = url
-                                            showingImageViewer = true
+                                            selectedInvoiceImage = InvoiceImageWrapper(url: url)
                                         }
                                 }
                             }

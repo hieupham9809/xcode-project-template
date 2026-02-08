@@ -10,6 +10,7 @@ public enum NavigationRoute: Hashable, Sendable {
     case ocrProcessing(URL)
     case reviewSubscription(Invoice?)
     case analytics
+    case categoryManagement
 }
 
 public protocol AddSubscriptionCoordinator: Sendable {

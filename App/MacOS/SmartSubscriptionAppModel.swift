@@ -24,16 +24,19 @@ final class SmartSubscriptionAppModel {
     let coreDataStack: CoreDataStack
     let subscriptionRepository: SubscriptionRepository
     let invoiceRepository: InvoiceRepository
+    let categoryRepository: CategoryRepository
     let settingsStore: SettingsStore
     let keychainStore: KeychainStore
 
     // Use Cases
     let subscriptionUseCase: SubscriptionUseCase
+    let categoryUseCase: CategoryUseCase
     let invoiceOCRUseCase: InvoiceOCRUseCase
 
     private init() {
         // Initialize Settings Store first (needed for CloudKit setting)
         settingsStore = SettingsStore.shared
+        // Keychain store
         keychainStore = KeychainStore(service: Bundle.main.bundleIdentifier ?? "SmartSubscription")
 
         // Initialize Core Data Stack with CloudKit setting
@@ -49,9 +52,14 @@ final class SmartSubscriptionAppModel {
 
         subscriptionRepository = CoreDataSubscriptionRepository(stack: coreDataStack)
         invoiceRepository = CoreDataInvoiceRepository(stack: coreDataStack)
+        categoryRepository = CoreDataCategoryRepository(stack: coreDataStack)
 
         // Initialize Use Cases
         subscriptionUseCase = AppSubscriptionUseCase(repository: subscriptionRepository)
+        categoryUseCase = DefaultCategoryUseCase(
+            categoryRepository: categoryRepository,
+            subscriptionRepository: subscriptionRepository
+        )
 
         let session = URLSession(configuration: .default)
         invoiceOCRUseCase = AppInvoiceOCRUseCase(
@@ -61,7 +69,10 @@ final class SmartSubscriptionAppModel {
         )
 
         contentViewModel = ContentViewModel()
-
+        // Seed default categories
+        Task {
+            try? await categoryUseCase.seedDefaultCategoriesIfNeeded()
+        }
         // Listen for CloudKit sync toggle notifications
         NotificationCenter.default.addObserver(
             self,

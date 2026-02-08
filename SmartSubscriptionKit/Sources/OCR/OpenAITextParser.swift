@@ -17,7 +17,7 @@ public actor OpenAITextParser: Sendable {
     /// - Returns: Parsed Invoice object
     /// - Throws: InvoiceParserError if parsing fails
     public func parseInvoiceFromText(_ text: String) async throws -> Invoice {
-        guard let apiKey = try settingsStore.getOpenAIAPIKey() else {
+        guard let apiKey = settingsStore.openAIAPIKey else {
             throw InvoiceParserError.noAPIKey
         }
 
@@ -28,12 +28,15 @@ public actor OpenAITextParser: Sendable {
         You will receive text that was extracted from an invoice image via OCR.
         Extract the following fields from the invoice text:
         - Invoice Date (ISO 8601 format YYYY-MM-DD)
-        - Next Billing/Renewal Date (ISO 8601 format YYYY-MM-DD), if available. It can be calculated from the invoice date and billing cycle.
         - Total Amount (numeric, see NUMBER FORMAT RULES below)
         - Currency Code (3-letter ISO code, e.g. USD, EUR, VND, JPY)
         - Subscription Name (descriptive name including plan/tier, e.g., "Netflix Premium", "Spotify Family")
         - Vendor/Provider Name (company name only, e.g., "Netflix", "Spotify")
+        - Billing Cycle (one of: "weekly", "monthly", "yearly"). Infer this from the invoice context (e.g., "Monthly subscription", "Yearly plan", "Billed every month"). If unknown, omit.
         - Line Items (title and amount)
+
+        CONTEXT:
+        - Current system date: \(Date().formatted(date: .numeric, time: .omitted))
 
         NUMBER FORMAT RULES (Excel Standard):
         - Use PERIOD (.) as the decimal separator
@@ -54,11 +57,11 @@ public actor OpenAITextParser: Sendable {
         Return ONLY a valid JSON object with this schema:
         {
           "invoiceDate": "YYYY-MM-DD",
-          "nextBillingDate": "YYYY-MM-DD",
           "totalAmount": 268129,
           "currencyCode": "VND",
           "subscriptionName": "Service Plan Name",
           "providerName": "Vendor Name",
+          "billingCycle": "monthly",
           "lineItems": [
             { "title": "Item 1", "amount": 150000 },
             { "title": "Item 2", "amount": 118129 }
@@ -157,11 +160,11 @@ public actor OpenAITextParser: Sendable {
 
         struct ParsedInvoice: Decodable {
             let invoiceDate: String
-            let nextBillingDate: String?
             let totalAmount: Decimal
             let currencyCode: String
             let subscriptionName: String?
             let providerName: String
+            let billingCycle: String?
             struct LineItem: Decodable {
                 let title: String
                 let amount: Decimal

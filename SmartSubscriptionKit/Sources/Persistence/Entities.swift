@@ -17,6 +17,19 @@ final class SubscriptionEntity: NSManagedObject {
     @NSManaged var createdAt: Date
     @NSManaged var updatedAt: Date
     @NSManaged var invoices: Set<InvoiceEntity>
+    @NSManaged var category: CategoryEntity?
+}
+
+@objc(CategoryEntity)
+final class CategoryEntity: NSManagedObject {
+    @NSManaged var id: UUID
+    @NSManaged var name: String
+    @NSManaged var colorHex: String
+    @NSManaged var iconName: String
+    @NSManaged var sortOrder: Int64
+    @NSManaged var createdAt: Date
+    @NSManaged var updatedAt: Date
+    @NSManaged var subscriptions: Set<SubscriptionEntity>
 }
 
 @objc(InvoiceEntity)

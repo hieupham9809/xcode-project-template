@@ -16,18 +16,23 @@ final class HomeDashboardViewModel: ObservableObject {
     @Published var selectedPeriod: Period = .monthly
     @Published var totalSpendFormatted: String = "$0.00"
     @Published var defaultCurrency: String = "USD"
+    @Published var categories: [SubscriptionCategory] = []
+    @Published var selectedCategory: SubscriptionCategory.ID? = nil
 
     private let subscriptionUseCase: SubscriptionUseCase
+    private let categoryUseCase: CategoryUseCase
     private let currencyConverter: CurrencyConverter
     private let settingsStore: SettingsStore
     private var cancellables = Set<AnyCancellable>()
 
     init(
         subscriptionUseCase: SubscriptionUseCase,
+        categoryUseCase: CategoryUseCase,
         currencyConverter: CurrencyConverter = CurrencyConverter(),
         settingsStore: SettingsStore = .shared
     ) {
         self.subscriptionUseCase = subscriptionUseCase
+        self.categoryUseCase = categoryUseCase
         self.currencyConverter = currencyConverter
         self.settingsStore = settingsStore
         defaultCurrency = settingsStore.defaultCurrency
@@ -104,8 +109,14 @@ final class HomeDashboardViewModel: ObservableObject {
     }
 
     var activeSubscriptions: [SmartSubscriptionKit.Subscription] {
-        subscriptions.filter { $0.status == .active }
-            .sorted { ($0.nextBillingDate ?? Date.distantFuture) < ($1.nextBillingDate ?? Date.distantFuture) }
+        let active = subscriptions.filter { $0.status == .active }
+        let filtered = selectedCategory == nil 
+            ? active 
+            : active.filter { $0.categoryID == selectedCategory }
+            
+        return filtered.sorted { 
+            ($0.nextBillingDate ?? Date.distantFuture) < ($1.nextBillingDate ?? Date.distantFuture) 
+        }
     }
 
     func loadSubscriptions() async {
@@ -113,6 +124,9 @@ final class HomeDashboardViewModel: ObservableObject {
         errorMessage = nil
         do {
             subscriptions = try await subscriptionUseCase.getAllSubscriptions()
+            if categories.isEmpty {
+                categories = try await categoryUseCase.getAllCategories()
+            }
             await calculateTotalSpend()
         } catch {
             errorMessage = "Failed to load subscriptions: \(error.localizedDescription)"

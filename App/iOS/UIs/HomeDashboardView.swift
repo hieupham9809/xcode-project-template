@@ -58,6 +58,34 @@ struct HomeDashboardView: View {
                             totalSpend: viewModel.totalSpend,
                             selectedPeriod: $viewModel.selectedPeriod
                         )
+
+                        // Category Filter
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                // "All" Chip
+                                CategoryChip(
+                                    title: "All",
+                                    isSelected: viewModel.selectedCategory == nil,
+                                    color: Color.accentColor,
+                                    iconName: nil
+                                ) {
+                                    viewModel.selectedCategory = nil
+                                }
+
+                                // Category Chips
+                                ForEach(viewModel.categories) { category in
+                                    CategoryChip(
+                                        title: category.name,
+                                        isSelected: viewModel.selectedCategory == category.id,
+                                        color: Color(hexString: category.colorHex),
+                                        iconName: category.iconName
+                                    ) {
+                                        viewModel.selectedCategory = viewModel.selectedCategory == category.id ? nil : category.id
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
                         
                         // Active Subscriptions List
                         VStack(spacing: 16) {
@@ -261,5 +289,41 @@ struct SubscriptionCardSkeleton: View {
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         .modifier(ShimmerModifier())
+    }
+}
+
+// MARK: - Category Chip
+
+struct CategoryChip: View {
+    let title: String
+    let isSelected: Bool
+    let color: Color
+    let iconName: String?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if let iconName {
+                    Image(systemName: iconName)
+                        .font(.caption)
+                }
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(isSelected ? .semibold : .regular)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(isSelected ? color.opacity(0.15) : Color.gray.opacity(0.1))
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(isSelected ? color : Color.clear, lineWidth: 1.5)
+            )
+            .foregroundStyle(isSelected ? color : .primary)
+        }
+        .buttonStyle(ScaleButtonStyle())
     }
 }

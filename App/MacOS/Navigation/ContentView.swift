@@ -25,7 +25,8 @@ public struct ContentView: View {
         self._path = path
         self.viewModel = viewModel
         self._homeViewModel = StateObject(wrappedValue: HomeDashboardViewModel(
-            subscriptionUseCase: SmartSubscriptionAppModel.shared.subscriptionUseCase
+            subscriptionUseCase: SmartSubscriptionAppModel.shared.subscriptionUseCase,
+            categoryUseCase: SmartSubscriptionAppModel.shared.categoryUseCase
         ))
     }
 
@@ -103,6 +104,12 @@ public struct ContentView: View {
                         )
                     case .settings:
                         SettingsView(path: $path)
+                    case .categoryManagement:
+                        CategoryListView(
+                            viewModel: CategoryListViewModel(
+                                categoryUseCase: SmartSubscriptionAppModel.shared.categoryUseCase
+                            )
+                        )
                     }
                 }
         }

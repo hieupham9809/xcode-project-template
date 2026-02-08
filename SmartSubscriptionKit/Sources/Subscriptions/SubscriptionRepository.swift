@@ -43,6 +43,15 @@ public actor CoreDataSubscriptionRepository: SubscriptionRepository {
     public func save(_ subscription: Subscription) async throws {
         try await stack.performBackground { context in
             let entity = try findOrCreateEntity(for: subscription.id, in: context)
+
+            if let categoryID = subscription.categoryID {
+                let categoryRequest = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
+                categoryRequest.predicate = NSPredicate(format: "id == %@", categoryID.rawValue as CVarArg)
+                entity.category = try context.fetch(categoryRequest).first
+            } else {
+                entity.category = nil
+            }
+
             entity.apply(subscription)
 
             if context.hasChanges {
@@ -151,6 +160,7 @@ private extension SubscriptionEntity {
             amount: Money(amount: amount.decimalValue, currencyCode: currencyCode),
             cadence: cadence,
             startDate: startDate,
+            categoryID: category.map { SubscriptionCategory.ID(rawValue: $0.id) },
             nextBillingDate: nextBillingDate,
             status: Subscription.Status(rawValue: status) ?? .active,
             notes: notes,
