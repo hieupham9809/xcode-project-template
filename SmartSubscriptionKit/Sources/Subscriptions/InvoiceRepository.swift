@@ -56,13 +56,12 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
 
     public func save(_ invoice: Invoice) async throws {
         // Persist image if needed before saving entity
-        var persistentImageURL: URL? = invoice.sourceImageURL
+        var relativeImagePath: String?
         if let sourceURL = invoice.sourceImageURL {
             do {
-                persistentImageURL = try persistImage(from: sourceURL, for: invoice.id)
+                relativeImagePath = try persistImage(from: sourceURL, for: invoice.id)
             } catch {
                 print("Failed to persist image: \(error)")
-                // Fallback to original URL if persistence fails, though it might be temporary
             }
         }
 
@@ -74,7 +73,19 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
             entity.invoiceDate = invoice.invoiceDate
             entity.totalAmount = NSDecimalNumber(decimal: invoice.total.amount)
             entity.totalCurrencyCode = invoice.total.currencyCode
-            entity.sourceImageURLString = persistentImageURL?.absoluteString // Use persistent URL
+            
+            // Store relative path (e.g., "Invoices/UUID.jpg")
+            // If we failed to persist new image, keep existing path? 
+            // Better: if invoice has a NEW url, we persist it and get new relative path.
+            // If invoice.sourceImageURL is nil, we clear it.
+            if let newPath = relativeImagePath {
+                entity.sourceImageURLString = newPath
+            } else if invoice.sourceImageURL == nil {
+                entity.sourceImageURLString = nil
+            }
+            // Note: If invoice.sourceImageURL is unchanged (already pointing to Documents), 
+            // persistsImage handles it by returning relative path.
+            
             entity.lineItems.forEach { context.delete($0) }
             entity.lineItems.removeAll()
             // ... (rest of usage)
@@ -99,22 +110,27 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
         }
     }
 
-    private func persistImage(from sourceURL: URL, for id: Invoice.ID) throws -> URL {
+    /// Persists the image to Documents/Invoices and returns the relative path (e.g., "Invoices/uuid.jpg")
+    private func persistImage(from sourceURL: URL, for id: Invoice.ID) throws -> String {
         let fileManager = FileManager.default
         guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            return sourceURL
+            throw NSError(domain: "InvoiceRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "Documents directory not found"])
         }
 
-        let invoicesDirectory = documentsURL.appendingPathComponent("Invoices", isDirectory: true)
+        let invoicesDirectoryName = "Invoices"
+        let invoicesDirectory = documentsURL.appendingPathComponent(invoicesDirectoryName, isDirectory: true)
+        
         if !fileManager.fileExists(atPath: invoicesDirectory.path) {
             try fileManager.createDirectory(at: invoicesDirectory, withIntermediateDirectories: true)
         }
 
-        let destinationURL = invoicesDirectory.appendingPathComponent("\(id.rawValue.uuidString).jpg")
+        let fileName = "\(id.rawValue.uuidString).jpg"
+        let destinationURL = invoicesDirectory.appendingPathComponent(fileName)
+        let relativePath = "\(invoicesDirectoryName)/\(fileName)"
 
-        // If source is already the destination, return
+        // If source is already the destination, return relative path
         if sourceURL.path == destinationURL.path {
-            return destinationURL
+            return relativePath
         }
 
         // Remove existing file at destination if needed
@@ -122,9 +138,9 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
             try fileManager.removeItem(at: destinationURL)
         }
 
-        // Copy item (copy is safer than move if source is needed elsewhere temporarily)
+        // Copy item
         try fileManager.copyItem(at: sourceURL, to: destinationURL)
-        return destinationURL
+        return relativePath
     }
 
     public func delete(id: Invoice.ID) async throws {
@@ -136,12 +152,13 @@ public actor CoreDataInvoiceRepository: InvoiceRepository {
                 throw InvoiceRepositoryError.invoiceNotFound
             }
 
-            // Cleanup image file
-            if let urlString = entity.sourceImageURLString,
-               let url = URL(string: urlString),
-               url.path.contains("Documents/Invoices") // Safety check
-            {
-                try? FileManager.default.removeItem(at: url)
+            // Cleanup image file using relative path
+            if let relativePath = entity.sourceImageURLString {
+                let fileManager = FileManager.default
+                if let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
+                    let fullURL = documentsURL.appendingPathComponent(relativePath)
+                    try? fileManager.removeItem(at: fullURL)
+                }
             }
 
             context.delete(entity)
@@ -186,13 +203,21 @@ private extension InvoiceEntity {
             )
         }
 
+        // Resolve relative path to full URL
+        var sourceImageURL: URL?
+        if let relativePath = sourceImageURLString {
+            if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                sourceImageURL = documentsURL.appendingPathComponent(relativePath)
+            }
+        }
+
         return Invoice(
             id: .init(rawValue: id),
             subscriptionID: .init(rawValue: subscription.id),
             invoiceDate: invoiceDate,
             total: Money(amount: totalAmount.decimalValue, currencyCode: totalCurrencyCode),
             lineItems: lineItems,
-            sourceImageURL: sourceImageURLString.flatMap(URL.init(string:)),
+            sourceImageURL: sourceImageURL,
             ocrText: ocrText,
             createdAt: createdAt
         )

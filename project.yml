@@ -41,9 +41,13 @@ targets:
           CODE_SIGN_ENTITLEMENTS: App/App_non_sandbox.entitlements
     sources:
       - path: ./App/MacOS
-      - path: ./App/MacOS/UseCases
-      - path: ./App/MacOS/ViewModels
-      - path: ./App/MacOS/UIs
+      - path: ./App/Shared/ViewModels
+      - path: ./App/Shared/UseCases
+      - path: ./App/Shared/Utilities
+      - path: ./App/Shared/Services
+      - path: ./App/Shared/AppModel
+      - path: ./App/Shared/Navigation
+      - path: ./App/Shared/UIs
     dependencies:
       - sdk: StoreKit.framework
       - package: SmartSubscriptionKit
@@ -128,6 +132,7 @@ targets:
   SmartSubscriptionIOS:
     type: application
     platform: iOS
+    supportedDestinations: [iOS]
     deploymentTarget:
       iOS: "16.0"
     settings:
@@ -136,10 +141,11 @@ targets:
         GENERATE_INFOPLIST_FILE: false
         INFOPLIST_FILE: iOS/Info.plist
         IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        TARGETED_DEVICE_FAMILY: 1
         PRODUCT_BUNDLE_IDENTIFIER: com.devindi.SmartSubscription.ios
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         CURRENT_PROJECT_VERSION: 1
-        MARKETING_VERSION: 1.0.0
+        MARKETING_VERSION: 0.1.0
         DEVELOPMENT_TEAM: VWB936L9T6
         CODE_SIGN_IDENTITY: "Apple Development"
         CODE_SIGN_ENTITLEMENTS: iOS.entitlements
@@ -147,18 +153,13 @@ targets:
       - path: ./App/iOS
         excludes:
           - Info.plist
-      - path: ./App/MacOS/ViewModels
-      - path: ./App/MacOS/UseCases
-      - path: ./App/MacOS/Utilities
-      - path: ./App/MacOS/FirebaseEventLogger.swift
-      - path: ./App/MacOS/SmartSubscriptionAppModel.swift
-      - path: ./App/MacOS/Navigation/AddSubscriptionCoordinator.swift
-      - path: ./App/MacOS/UIs
-        excludes:
-          - HomeDashboardView.swift
-          - TransparentHostingController.swift
-          - ImageViewer.swift
-          - AddSubscriptionView.swift
+      - path: ./App/Shared/ViewModels
+      - path: ./App/Shared/UseCases
+      - path: ./App/Shared/Utilities
+      - path: ./App/Shared/Services/FirebaseEventLogger.swift
+      - path: ./App/Shared/AppModel/SmartSubscriptionAppModel.swift
+      - path: ./App/Shared/Navigation/AddSubscriptionCoordinator.swift
+      - path: ./App/Shared/UIs
     dependencies:
       - sdk: StoreKit.framework
       - package: SmartSubscriptionKit
@@ -178,10 +179,10 @@ targets:
         GENERATE_INFOPLIST_FILE: true
     sources:
       - path: ./App/Tests
-      - path: ./App/MacOS/ViewModels/HomeDashboardViewModel.swift
-      - path: ./App/MacOS/ViewModels/ReviewEditViewModel.swift
-      - path: ./App/MacOS/UseCases/SubscriptionUseCase.swift
-      - path: ./App/MacOS/UseCases/CategoryUseCase.swift
+      - path: ./App/Shared/ViewModels/HomeDashboardViewModel.swift
+      - path: ./App/Shared/ViewModels/ReviewEditViewModel.swift
+      - path: ./App/Shared/UseCases/SubscriptionUseCase.swift
+      - path: ./App/Shared/UseCases/CategoryUseCase.swift
     dependencies:
       - package: SmartSubscriptionKit
         products:

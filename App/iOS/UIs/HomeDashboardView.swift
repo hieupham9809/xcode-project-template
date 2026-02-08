@@ -10,12 +10,19 @@ struct HomeDashboardView: View {
             // Background
             Color(uiColor: .secondarySystemBackground)
                 .ignoresSafeArea()
-            
             // Header Gradient
             Color.brandHeaderGradient
+                .background {
+                    Image(.backgroundHome)
+                        .resizable()
+                        .scaledToFill()
+                        .opacity(0.25)
+                }
                 .frame(height: 300)
+                .clipped()
                 .ignoresSafeArea()
-            
+                
+                
             VStack(spacing: 0) {
                 // Custom Header
                 VStack(spacing: 16) {
@@ -310,7 +317,7 @@ struct CategoryChip: View {
                 }
                 Text(title)
                     .font(.subheadline)
-                    .fontWeight(isSelected ? .semibold : .regular)
+                    .fontWeight(isSelected ? .bold : .semibold)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

@@ -6,6 +6,10 @@
 //
 
 import SwiftUI
+
+#if os(macOS)
+import AppKit
+
 /// https://stackoverflow.com/a/75310109
 public struct HoverCursorModifier: ViewModifier {
     
@@ -40,9 +44,19 @@ public struct HoverCursorModifier: ViewModifier {
                     }
                     
                 }
-            } 
+            }
     }
 }
+#else
+public struct HoverCursorModifier: ViewModifier {
+    init(imageName: String) {}
+    init(systemSymbolName: String) {}
+    
+    public func body(content: Content) -> some View {
+        content
+    }
+}
+#endif
 
 extension View {
     func applyHoveringCursor() -> some View {

@@ -170,7 +170,7 @@ public actor OpenAITextParser: Sendable {
                 let amount: Decimal
             }
 
-            let lineItems: [LineItem]
+            let lineItems: [LineItem]?
         }
 
         let parsed = try JSONDecoder().decode(ParsedInvoice.self, from: jsonData)
@@ -185,7 +185,7 @@ public actor OpenAITextParser: Sendable {
         let date = formatter.date(from: parsed.invoiceDate) ?? Date()
 
         let totalMoney = Money(amount: parsed.totalAmount, currencyCode: parsed.currencyCode)
-        let domainLineItems = parsed.lineItems.map {
+        let domainLineItems = (parsed.lineItems ?? []).map {
             Invoice.LineItem(title: $0.title, amount: Money(amount: $0.amount, currencyCode: parsed.currencyCode))
         }
 
