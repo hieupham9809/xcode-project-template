@@ -91,3 +91,4 @@ Deploys/Builds/
 Deploys/Sparkle/
 Deploys/venv/
 Deploys/SwiftClean_firestore.json
+SmartSubscriptionKit/Sources/Utilities/Secrets.swift
