@@ -8,6 +8,14 @@ final class HomeDashboardViewModel: ObservableObject {
         case monthly = "Monthly"
         case yearly = "Yearly"
         var id: String { rawValue }
+
+        /// Converts to NormalizationPeriod for use with AmountNormalizer
+        var normalizationPeriod: NormalizationPeriod {
+            switch self {
+            case .monthly: .monthly
+            case .yearly: .yearly
+            }
+        }
     }
 
     @Published var subscriptions: [SmartSubscriptionKit.Subscription] = []
@@ -72,7 +80,7 @@ final class HomeDashboardViewModel: ObservableObject {
         var total: Decimal = 0
 
         for sub in subscriptions where sub.status == .active {
-            let normalizedAmount = sub.normalizedAmount(for: selectedPeriod)
+            let normalizedAmount = sub.normalizedAmount(for: selectedPeriod.normalizationPeriod)
 
             // Convert to user's default currency
             do {
@@ -89,7 +97,8 @@ final class HomeDashboardViewModel: ObservableObject {
         }
 
         let formatter = Formatters.currencyFormatter(for: defaultCurrency)
-        totalSpendFormatted = formatter.string(from: total as NSDecimalNumber) ?? "$0.00"
+        let formattedAmount = formatter.string(from: total as NSDecimalNumber) ?? "$0.00"
+        totalSpendFormatted = formattedAmount + selectedPeriod.normalizationPeriod.displaySuffix
     }
 
     /// Legacy computed property for backward compatibility
@@ -110,12 +119,12 @@ final class HomeDashboardViewModel: ObservableObject {
 
     var activeSubscriptions: [SmartSubscriptionKit.Subscription] {
         let active = subscriptions.filter { $0.status == .active }
-        let filtered = selectedCategory == nil 
-            ? active 
+        let filtered = selectedCategory == nil
+            ? active
             : active.filter { $0.categoryID == selectedCategory }
-            
-        return filtered.sorted { 
-            ($0.nextBillingDate ?? Date.distantFuture) < ($1.nextBillingDate ?? Date.distantFuture) 
+
+        return filtered.sorted {
+            ($0.nextBillingDate ?? Date.distantFuture) < ($1.nextBillingDate ?? Date.distantFuture)
         }
     }
 
@@ -140,30 +149,6 @@ final class HomeDashboardViewModel: ObservableObject {
             await loadSubscriptions()
         } catch {
             errorMessage = "Failed to delete subscription: \(error.localizedDescription)"
-        }
-    }
-}
-
-private extension SmartSubscriptionKit.Subscription {
-    func normalizedAmount(for period: HomeDashboardViewModel.Period) -> Decimal {
-        let amount = amount.amount
-        switch (cadence, period) {
-        case (.monthly, .monthly):
-            return amount
-        case (.monthly, .yearly):
-            return amount * 12
-        case (.yearly, .monthly):
-            return amount / 12
-        case (.yearly, .yearly):
-            return amount
-        case (.weekly, .monthly):
-            return amount * 4.33 // Approx
-        case (.weekly, .yearly):
-            return amount * 52
-        case let (.customDays(days), .monthly):
-            return amount * (30.0 / Decimal(days))
-        case let (.customDays(days), .yearly):
-            return amount * (365.0 / Decimal(days))
         }
     }
 }

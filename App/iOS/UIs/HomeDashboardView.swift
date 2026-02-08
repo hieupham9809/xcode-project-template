@@ -177,7 +177,7 @@ struct SummaryCard: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Text("Total \(totalSpend)/month") // Design says "Total $XX.XX/month"
+            Text("Total estimated \(totalSpend)") // Design says "Total $XX.XX/month"
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.black)
         }

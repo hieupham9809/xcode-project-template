@@ -66,7 +66,7 @@ final class AnalyticsViewModel: ObservableObject {
         // Total Monthly Spend with currency conversion
         var total: Decimal = 0
         for sub in active {
-            let monthlyAmount = sub.normalizedMonthlyAmount
+            let monthlyAmount = sub.normalizedAmount(for: .monthly)
             do {
                 let converted = try await currencyConverter.convert(
                     monthlyAmount,
@@ -87,7 +87,7 @@ final class AnalyticsViewModel: ObservableObject {
         for (key, subs) in grouped {
             var categoryTotal: Decimal = 0
             for sub in subs {
-                let monthlyAmount = sub.normalizedMonthlyAmount
+                let monthlyAmount = sub.normalizedAmount(for: .monthly)
                 do {
                     let converted = try await currencyConverter.convert(
                         monthlyAmount,
@@ -114,17 +114,5 @@ final class AnalyticsViewModel: ObservableObject {
             }
         }
         monthlyTrend = trend
-    }
-}
-
-private extension SmartSubscriptionKit.Subscription {
-    var normalizedMonthlyAmount: Decimal {
-        let amount = amount.amount
-        switch cadence {
-        case .monthly: return amount
-        case .yearly: return amount / 12
-        case .weekly: return amount * 4.33
-        case let .customDays(days): return amount * (30.0 / Decimal(days))
-        }
     }
 }
