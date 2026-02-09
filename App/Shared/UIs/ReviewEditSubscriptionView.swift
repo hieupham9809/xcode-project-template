@@ -55,11 +55,10 @@ struct ReviewEditSubscriptionView: View {
 
             Section {
                 HStack {
-                    TextField("Amount", value: $viewModel.amount, format: .number)
+                    CurrencyTextField(value: $viewModel.amount, currencyCode: viewModel.currencyCode)
                         .onChange(of: viewModel.amount) { _ in viewModel.validate() }
                     #if os(iOS)
                         .focused($focusedField, equals: .amount)
-                        .keyboardType(.decimalPad)
                     #endif
 
                     TextField("Currency", text: $viewModel.currencyCode)

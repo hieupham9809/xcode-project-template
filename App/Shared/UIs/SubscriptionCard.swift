@@ -15,18 +15,7 @@ struct SubscriptionCard: View {
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             // Icon
-            ZStack {
-                Circle()
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    .frame(width: 48, height: 48)
-
-                // Fallback Text Icon (Design has logos, we use text for MVP)
-                Text(subscription.name.prefix(1).uppercased())
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundStyle(Color.brandDeepBlue)
-            }
+            ServiceIconView(subscription: subscription)
 
             // Name & Provider
             VStack(alignment: .leading, spacing: 4) {
@@ -47,6 +36,16 @@ struct SubscriptionCard: View {
                         .foregroundStyle(Color.secondaryText)
                         .lineLimit(1)
                 }
+                
+                // Billing Period Badge
+                Text(subscription.cadence.description)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.1))
+                    .clipShape(Capsule())
+                    .foregroundColor(.secondary)
             }
 
             // Billing Urgency Badge - Moved to trailing
