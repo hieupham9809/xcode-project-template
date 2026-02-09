@@ -27,7 +27,7 @@ struct OCRProcessingView: View {
     var body: some View {
         ZStack {
             // Background Image (Blurred)
-            Color(hex: 0x0F172A).ignoresSafeArea() // Fintech Dark BG
+            Color.appPrimaryBackground.ignoresSafeArea()
             
             if let url = imageURL {
                 #if os(macOS)
@@ -55,9 +55,9 @@ struct OCRProcessingView: View {
                 // Scanning Animation Container
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color(hex: 0x334155), lineWidth: 1) // Border
+                        .stroke(Color.appBorder, lineWidth: 1)
                         .frame(width: 280, height: 380)
-                        .background(Color(hex: 0x0F172A).opacity(0.5))
+                        .background(Color.appElevatedBackground.opacity(0.5))
                     
                     if let url = imageURL {
                         #if os(macOS)
@@ -87,9 +87,9 @@ struct OCRProcessingView: View {
                             LinearGradient(
                                 gradient: Gradient(colors: [
                                     Color.clear,
-                                    Color(hex: 0xF59E0B).opacity(0.5), // Primary Accent
-                                    Color(hex: 0xF59E0B),
-                                    Color(hex: 0xF59E0B).opacity(0.5),
+                                    Color.appAccent.opacity(0.5),
+                                    Color.appAccent,
+                                    Color.appAccent.opacity(0.5),
                                     Color.clear
                                 ]),
                                 startPoint: .top,
@@ -111,31 +111,31 @@ struct OCRProcessingView: View {
                 VStack(spacing: 12) {
                     Text(viewModel.statusText)
                         .font(.headline)
-                        .foregroundStyle(Color(hex: 0xF8FAFC)) // Light Text
+                        .foregroundStyle(Color.appPrimaryText)
                         .transition(.opacity)
                         .id(viewModel.statusText) // Force animation on text change
 
                     ProgressView(value: viewModel.progress)
-                        .progressViewStyle(LinearProgressViewStyle(tint: Color(hex: 0xF59E0B)))
+                        .progressViewStyle(LinearProgressViewStyle(tint: Color.appAccent))
                         .frame(width: 200)
                 }
             
                 // Success Overlay (Manual control if needed)
                 if let invoice = viewModel.scannedInvoice {
                     ZStack {
-                        Color.black.opacity(0.6).ignoresSafeArea()
-                        
+                        Color.appOverlay.ignoresSafeArea()
+
                         VStack(spacing: 20) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 60))
-                                .foregroundStyle(Color.green)
+                                .foregroundStyle(Color.appSuccess)
                                 .padding(.bottom, 10)
-                            
+
                             Text("Scan Complete")
                                 .font(.title2)
                                 .bold()
-                                .foregroundStyle(.white)
-                            
+                                .foregroundStyle(Color.appPrimaryText)
+
                             HStack(spacing: 16) {
                                 Button("Retake") {
                                     Task {
@@ -144,17 +144,17 @@ struct OCRProcessingView: View {
                                     }
                                 }
                                 .buttonStyle(.bordered)
-                                .tint(.white)
-                                
+                                .tint(Color.appBrandPrimary)
+
                                 Button("Continue") {
                                     onCompletion(invoice)
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .tint(Color(hex: 0xF59E0B))
+                                .tint(Color.appAccent)
                             }
                         }
                         .padding(30)
-                        .background(Color(hex: 0x1E293B)) // Slate 800
+                        .background(Color.appElevatedBackground)
                         .cornerRadius(20)
                         .shadow(radius: 20)
                     }
@@ -166,15 +166,17 @@ struct OCRProcessingView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 48))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.appError)
                     Text("Scanning Failed")
                         .font(.title2)
                         .bold()
+                        .foregroundStyle(Color.appPrimaryText)
                     Text(error)
                         .font(.body)
+                        .foregroundStyle(Color.appSecondaryText)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
-                    
+
                     Button("Try Again") {
                         if let url = imageURL {
                             Task {
@@ -183,15 +185,12 @@ struct OCRProcessingView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.appAccent)
                 }
                 .padding()
-                #if os(macOS)
-                .background(Color(nsColor: .windowBackgroundColor))
-                #else
-                .background(Color(uiColor: .secondarySystemBackground))
-                #endif
+                .background(Color.appElevatedBackground)
                 .cornerRadius(16)
-                .shadow(radius: 10)
+                .shadow(color: Color.appShadow, radius: 10)
                 .padding(40)
             }
         }

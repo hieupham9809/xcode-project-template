@@ -30,6 +30,9 @@ final class SettingsViewModel: ObservableObject {
     @Published var lastRatesUpdate: Date?
     @Published var supportedCurrencies: [CurrencyInfo] = CurrencyInfo.commonCurrencies
 
+    // Appearance Settings
+    @Published var appearanceMode: AppearanceMode = .system
+
     private var settingsStore: SettingsStore
     private var subscriptionUseCase: SubscriptionUseCase?
     private let currencyConverter: CurrencyConverter
@@ -50,6 +53,7 @@ final class SettingsViewModel: ObservableObject {
         parserMode = settingsStore.parserMode
         isCloudKitSyncEnabled = settingsStore.isCloudKitSyncEnabled
         defaultCurrency = settingsStore.defaultCurrency
+        appearanceMode = settingsStore.appearanceMode
 
         // Load cached exchange rates info
         Task {
@@ -62,6 +66,13 @@ final class SettingsViewModel: ObservableObject {
     }
 
     // AI Configuration methods removed as they are now hardcoded
+
+    // MARK: - Appearance Management
+
+    func updateAppearanceMode(_ mode: AppearanceMode) {
+        appearanceMode = mode
+        settingsStore.appearanceMode = mode
+    }
 
     // MARK: - Currency Management
 

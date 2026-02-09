@@ -17,6 +17,7 @@ public struct ContentView: View {
     @Binding var path: NavigationPath
     private var viewModel: ContentViewModel
     @StateObject private var homeViewModel: HomeDashboardViewModel
+    @State private var appearanceMode: AppearanceMode = SettingsStore.shared.appearanceMode
 
     init(
         path: Binding<NavigationPath>,
@@ -114,5 +115,9 @@ public struct ContentView: View {
                 }
         }
         .background(Color.SmartSubscriptionSecondaryGradient)
+        .applyAppearanceMode(appearanceMode)
+        .onReceive(NotificationCenter.default.publisher(for: .appearanceModeDidChange)) { _ in
+            appearanceMode = SettingsStore.shared.appearanceMode
+        }
     }
 }

@@ -17,7 +17,7 @@ struct AnalyticsDashboardView: View {
                 VStack(spacing: 8) {
                     Text("Total Monthly Spend")
                         .font(.headline)
-                        .foregroundStyle(Color.secondaryText)
+                        .foregroundStyle(Color.appSecondaryText)
 
                     Text(viewModel.totalSpend.formattedAsCurrency(code: viewModel.displayCurrency))
                     #if os(iOS)
@@ -25,7 +25,7 @@ struct AnalyticsDashboardView: View {
                     #else
                         .font(.system(size: 48, weight: .bold, design: .rounded))
                     #endif
-                        .foregroundStyle(Color.primaryText)
+                        .foregroundStyle(Color.appPrimaryText)
                 }
                 .padding(.top, 24)
 
@@ -44,7 +44,7 @@ struct AnalyticsDashboardView: View {
                         .annotation(position: .trailing) {
                             Text(item.1.formattedAsCurrency(code: viewModel.displayCurrency))
                                 .font(.caption)
-                                .foregroundStyle(Color.secondaryText)
+                                .foregroundStyle(Color.appSecondaryText)
                         }
                     }
                     #if os(iOS)
@@ -54,13 +54,9 @@ struct AnalyticsDashboardView: View {
                     #endif
                 }
                 .padding()
-                #if os(macOS)
-                    .background(Color(nsColor: .windowBackgroundColor))
-                #else
-                    .background(Color(uiColor: .secondarySystemBackground))
-                #endif
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.05), radius: 8)
+                .background(Color.appCardBackground)
+                .cornerRadius(16)
+                .shadow(color: Color.appShadow, radius: 8)
                     .padding(.horizontal)
 
                 // Trend
@@ -84,21 +80,13 @@ struct AnalyticsDashboardView: View {
                     #endif
                 }
                 .padding()
-                #if os(macOS)
-                    .background(Color(nsColor: .windowBackgroundColor))
-                #else
-                    .background(Color(uiColor: .secondarySystemBackground))
-                #endif
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.05), radius: 8)
+                .background(Color.appCardBackground)
+                .cornerRadius(16)
+                .shadow(color: Color.appShadow, radius: 8)
                     .padding(.horizontal)
             }
         }
-        #if os(macOS)
-        .background(Color.white)
-        #else
-        .background(Color(uiColor: .secondarySystemBackground))
-        #endif
+        .background(Color.appPrimaryBackground)
         .navigationTitle("Analytics")
         #if os(iOS)
             .navigationBarTitleDisplayMode(.large)

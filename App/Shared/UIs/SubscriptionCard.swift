@@ -4,14 +4,6 @@ import SwiftUI
 struct SubscriptionCard: View {
     let subscription: SmartSubscriptionKit.Subscription
 
-    // Fintech colors based on analysis
-    #if os(macOS)
-        private let cardBackground = Color(nsColor: .windowBackgroundColor) // Adaptive system color
-    #else
-        private let cardBackground = Color(uiColor: .secondarySystemBackground)
-    #endif
-    private let accentColor = Color.accentColor // Use app accent
-
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             // Icon
@@ -22,18 +14,18 @@ struct SubscriptionCard: View {
                 Text(subscription.name)
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundStyle(Color.primaryText)
+                    .foregroundStyle(Color.appPrimaryText)
                     .lineLimit(1)
 
                 if let providerName = subscription.providerName, !providerName.isEmpty {
                     Text(providerName)
                         .font(.subheadline)
-                        .foregroundStyle(Color.secondaryText)
+                        .foregroundStyle(Color.appSecondaryText)
                         .lineLimit(1)
                 } else if let notes = subscription.notes, !notes.isEmpty {
                     Text(notes)
                         .font(.subheadline)
-                        .foregroundStyle(Color.secondaryText)
+                        .foregroundStyle(Color.appSecondaryText)
                         .lineLimit(1)
                 }
                 
@@ -43,9 +35,9 @@ struct SubscriptionCard: View {
                     .fontWeight(.medium)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.1))
+                    .background(Color.appSecondaryText.opacity(0.1))
                     .clipShape(Capsule())
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.appSecondaryText)
             }
 
             // Billing Urgency Badge - Moved to trailing
@@ -59,8 +51,8 @@ struct SubscriptionCard: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(subscription.amount.formatted)
                             .font(.headline)
-                            .foregroundStyle(Color.primaryText)
-                        
+                            .foregroundStyle(Color.appPrimaryText)
+
                         if let days = subscription.daysUntilBilling {
                             BillingBadge(days: days, urgency: subscription.billingUrgency)
                         }
@@ -68,7 +60,7 @@ struct SubscriptionCard: View {
 
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Color.secondaryText)
+                        .foregroundStyle(Color.appSecondaryText)
                 }
             #else
                 // iOS: Price + Badge
@@ -76,8 +68,8 @@ struct SubscriptionCard: View {
                     Text(subscription.amount.formatted)
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundStyle(Color.primaryText)
-                    
+                        .foregroundStyle(Color.appPrimaryText)
+
                     if let days = subscription.daysUntilBilling {
                         BillingBadge(days: days, urgency: subscription.billingUrgency)
                     }
@@ -85,9 +77,9 @@ struct SubscriptionCard: View {
             #endif
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color.appCardBackground)
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .shadow(color: Color.appShadow, radius: 10, x: 0, y: 4)
         // Accessibility
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(subscription.name)\(subscription.providerName.map { ", by \($0)" } ?? ""), \(subscription.amount.formatted)")
@@ -103,10 +95,10 @@ struct BillingBadge: View {
 
     private var badgeColor: Color {
         switch urgency {
-        case .urgent: .urgentRed
-        case .warning: .warningOrange
-        case .safe: .safeGreen
-        case .unknown: .secondaryText
+        case .urgent: .appError
+        case .warning: .appWarning
+        case .safe: .appSuccess
+        case .unknown: .appSecondaryText
         }
     }
 
@@ -142,9 +134,9 @@ extension SmartSubscriptionKit.Subscription.BillingCadence {
     }
 }
 
-#Preview {
+#Preview("Light Mode") {
     ZStack {
-        Color.gray.opacity(0.1)
+        Color.appPrimaryBackground
             .ignoresSafeArea()
 
         VStack(spacing: 16) {
@@ -181,4 +173,47 @@ extension SmartSubscriptionKit.Subscription.BillingCadence {
         .padding()
         .frame(width: 400)
     }
+    .preferredColorScheme(.light)
+}
+
+#Preview("Dark Mode") {
+    ZStack {
+        Color.appPrimaryBackground
+            .ignoresSafeArea()
+
+        VStack(spacing: 16) {
+            // Urgent (2 days)
+            SubscriptionCard(subscription: SmartSubscriptionKit.Subscription(
+                name: "Netflix",
+                providerName: "Netflix Inc.",
+                amount: Money(amount: 15.99, currencyCode: "USD"),
+                cadence: .monthly,
+                startDate: Date(),
+                nextBillingDate: Calendar.current.date(byAdding: .day, value: 2, to: Date())
+            ))
+
+            // Warning (5 days)
+            SubscriptionCard(subscription: SmartSubscriptionKit.Subscription(
+                name: "Spotify",
+                providerName: "Spotify AB",
+                amount: Money(amount: 9.99, currencyCode: "USD"),
+                cadence: .monthly,
+                startDate: Date(),
+                nextBillingDate: Calendar.current.date(byAdding: .day, value: 5, to: Date())
+            ))
+
+            // Safe (15 days)
+            SubscriptionCard(subscription: SmartSubscriptionKit.Subscription(
+                name: "iCloud",
+                providerName: "Apple",
+                amount: Money(amount: 2.99, currencyCode: "USD"),
+                cadence: .monthly,
+                startDate: Date(),
+                nextBillingDate: Calendar.current.date(byAdding: .day, value: 15, to: Date())
+            ))
+        }
+        .padding()
+        .frame(width: 400)
+    }
+    .preferredColorScheme(.dark)
 }

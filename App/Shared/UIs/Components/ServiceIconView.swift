@@ -31,13 +31,13 @@ struct ServiceIconView: View {
         } else {
             ZStack {
                 Circle()
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                
+                    .fill(Color.appCardBackground)
+                    .shadow(color: Color.appShadow, radius: 4, x: 0, y: 2)
+
                 Text(name.prefix(1).uppercased())
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundStyle(Color("BrandDeepBlue")) // Use asset color safe lookup
+                    .foregroundStyle(Color.appBrandDeepBlue)
             }
             .frame(width: 48, height: 48)
         }

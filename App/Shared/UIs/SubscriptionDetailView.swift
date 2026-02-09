@@ -37,10 +37,10 @@ struct SubscriptionDetailView: View {
 
                         Text(viewModel.subscriptionAmountFormatted)
                             .font(.system(size: 36, weight: .heavy, design: .rounded))
-                            .foregroundStyle(Color.primaryText)
+                            .foregroundStyle(Color.appPrimaryText)
 
                         Text("/ \(viewModel.subscription.cadence.description.lowercased())")
-                            .foregroundStyle(Color.secondaryText)
+                            .foregroundStyle(Color.appSecondaryText)
                     }
                 }
                 .padding(.top, 40)
@@ -66,13 +66,13 @@ struct SubscriptionDetailView: View {
                                 HStack {
                                     Text(item.title)
                                         .font(.subheadline)
-                                        .foregroundStyle(Color.primaryText)
+                                        .foregroundStyle(Color.appPrimaryText)
                                         .lineLimit(2)
                                         .multilineTextAlignment(.leading)
                                     Spacer()
                                     Text(item.amount.amount.formattedAsCurrency(code: viewModel.subscription.amount.currencyCode))
                                         .font(.subheadline)
-                                        .foregroundStyle(Color.secondaryText)
+                                        .foregroundStyle(Color.appSecondaryText)
                                 }
                                 .padding()
 
@@ -81,9 +81,9 @@ struct SubscriptionDetailView: View {
                                 }
                             }
                         }
-                        .background(Color.white)
+                        .background(Color.appCardBackground)
                         .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+                        .shadow(color: Color.appShadow, radius: 4, x: 0, y: 2)
                         .padding(.horizontal)
                     }
                 }
@@ -99,14 +99,10 @@ struct SubscriptionDetailView: View {
                         Text("Notes")
                             .font(.headline)
                         Text(notes)
-                            .foregroundStyle(Color.secondaryText)
+                            .foregroundStyle(Color.appSecondaryText)
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        #if os(macOS)
-                            .background(Color(NSColor.controlBackgroundColor))
-                        #else
-                            .background(Color(uiColor: .secondarySystemBackground))
-                        #endif
+                            .background(Color.appSecondaryBackground)
                             .cornerRadius(8)
                     }
                     .padding(.horizontal)
@@ -128,12 +124,7 @@ struct SubscriptionDetailView: View {
                 .padding()
             }
         }
-
-        #if os(macOS)
-        .background(Color.white.ignoresSafeArea())
-        #else
-        .background(Color(uiColor: .secondarySystemBackground).ignoresSafeArea())
-        #endif
+        .background(Color.appPrimaryBackground.ignoresSafeArea())
         .navigationTitle(viewModel.subscription.name)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -214,15 +205,15 @@ struct InfoTile: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption)
-                .foregroundStyle(Color.secondaryText)
+                .foregroundStyle(Color.appSecondaryText)
             Text(value)
                 .font(.headline)
-                .foregroundStyle(Color.primaryText)
+                .foregroundStyle(Color.appPrimaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.white)
+        .background(Color.appCardBackground)
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.appShadow, radius: 4, x: 0, y: 2)
     }
 }

@@ -144,8 +144,8 @@ targets:
         TARGETED_DEVICE_FAMILY: 1
         PRODUCT_BUNDLE_IDENTIFIER: com.devindi.SmartSubscription.ios
         INFOPLIST_KEY_UILaunchScreen_Generation: true
-        CURRENT_PROJECT_VERSION: 1
-        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 2
+        MARKETING_VERSION: 0.1.1
         DEVELOPMENT_TEAM: VWB936L9T6
         CODE_SIGN_IDENTITY: "Apple Development"
         CODE_SIGN_ENTITLEMENTS: iOS.entitlements

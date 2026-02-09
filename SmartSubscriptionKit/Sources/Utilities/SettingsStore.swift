@@ -1,5 +1,12 @@
 import Foundation
 
+/// Appearance mode options for the app
+public enum AppearanceMode: String, Sendable, CaseIterable {
+    case system = "System"
+    case light = "Light"
+    case dark = "Dark"
+}
+
 public struct SettingsStore: Sendable {
     public struct Keys: Sendable {
         public static let openAIAPIKey = "OpenAIAPIKey"
@@ -7,6 +14,7 @@ public struct SettingsStore: Sendable {
         public static let isCloudKitSyncEnabled = "IsCloudKitSyncEnabled"
         public static let parserMode = "ParserMode"
         public static let defaultCurrency = "DefaultCurrency"
+        public static let appearanceMode = "AppearanceMode"
     }
 
     public static let shared = SettingsStore()
@@ -47,9 +55,30 @@ public struct SettingsStore: Sendable {
         }
     }
 
+    /// User's preferred appearance mode (system, light, or dark).
+    /// Defaults to system.
+    public var appearanceMode: AppearanceMode {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: Keys.appearanceMode),
+                  let mode = AppearanceMode(rawValue: rawValue) else {
+                return .system
+            }
+            return mode
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Keys.appearanceMode)
+            NotificationCenter.default.post(name: .appearanceModeDidChange, object: nil)
+        }
+    }
+
     public var openAIAPIKey: String? {
         // Return the hardcoded key from AppConfiguration
         let key = AppConfiguration.openAIAPIKey
         return key.isEmpty ? nil : key
     }
+}
+
+// MARK: - Notification Names
+extension Notification.Name {
+    public static let appearanceModeDidChange = Notification.Name("com.smartsubscription.appearanceModeDidChange")
 }

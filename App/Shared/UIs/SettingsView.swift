@@ -22,6 +22,17 @@ struct SettingsView: View {
             // AI Configuration and Invoice Parsing are now handled automatically
             // and hidden from the user.
 
+            Section(header: Text("Appearance")) {
+                Picker("Theme", selection: $viewModel.appearanceMode) {
+                    ForEach(AppearanceMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .onChange(of: viewModel.appearanceMode) { newValue in
+                    viewModel.updateAppearanceMode(newValue)
+                }
+            }
+
             Section {
                 Picker("Default Currency", selection: $viewModel.defaultCurrency) {
                     ForEach(viewModel.supportedCurrencies) { currency in

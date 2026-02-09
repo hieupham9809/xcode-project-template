@@ -8,7 +8,7 @@ struct HomeDashboardView: View {
     var body: some View {
         ZStack(alignment: .top) {
             // Background
-            Color(uiColor: .secondarySystemBackground)
+            Color.appPrimaryBackground
                 .ignoresSafeArea()
             // Header Gradient
             Color.brandHeaderGradient
@@ -179,13 +179,13 @@ struct SummaryCard: View {
         VStack(spacing: 8) {
             Text("Total estimated \(totalSpend)") // Design says "Total $XX.XX/month"
                 .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.black)
+                .foregroundStyle(Color.appPrimaryText)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
-        .background(Color.white)
+        .background(Color.appCardBackground)
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.appShadow, radius: 10, x: 0, y: 5)
         .padding(.horizontal, 20)
     }
 }
@@ -218,9 +218,9 @@ struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(48)
-        .background(Color.white)
+        .background(Color.appCardBackground)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 8)
+        .shadow(color: Color.appShadow, radius: 8)
     }
 }
 
@@ -292,9 +292,9 @@ struct SubscriptionCardSkeleton: View {
                 .frame(width: 60, height: 20)
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color.appCardBackground)
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .shadow(color: Color.appShadow, radius: 10, x: 0, y: 4)
         .modifier(ShimmerModifier())
     }
 }

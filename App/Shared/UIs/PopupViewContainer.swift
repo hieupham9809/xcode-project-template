@@ -22,7 +22,7 @@ struct PopupViewContainer<Content: View>: View {
     var body: some View {
         ZStack {
             if isPresented {
-                Color.black.opacity(0.5)
+                Color.appOverlay
                     .edgesIgnoringSafeArea(.all)
                     .onTapGesture {
                         if canTapOutsideToDismiss {
@@ -50,9 +50,9 @@ struct PopupViewContainer<Content: View>: View {
                 }
                 .frame(minWidth: 200, maxWidth: 400, maxHeight: 400)
                 .frame(height: contentSize.height + 40)
-                .background(Color.white)
+                .background(Color.appElevatedBackground)
                 .cornerRadius(8)
-                .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 4)
+                .shadow(color: Color.appShadow, radius: 4, x: 0, y: 4)
             }
         }
     }
